@@ -1,0 +1,116 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+// For local development, use SQLite
+// For production, switch to PostgreSQL by changing provider to "postgresql"
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  password     String
+  role         String        @default("STAFF")
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  assignedJobs Job[]         @relation("AssignedJobs")
+  activities   JobActivity[]
+}
+
+model Customer {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  phone       String?
+  email       String?
+  vip         Boolean  @default(false)
+  lastVisitAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  jobs        Job[]
+}
+
+model Job {
+  id           String        @id @default(cuid())
+  jobNumber    Int           @unique
+  customerId   String
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  status       String        @default("INTAKE")
+  itemType     String // Ring, Necklace, Bracelet, Watch, Earrings, Other
+  itemMetal    String? // Gold, Silver, Platinum, etc.
+  itemStone    String? // Diamond, Ruby, etc.
+  description  String?
+  issue        String
+  promisedAt   DateTime
+  assigneeId   String?
+  assignee     User?         @relation("AssignedJobs", fields: [assigneeId], references: [id])
+  depositCents Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  services     JobServiceLine[]
+  media        JobMedia[]
+  activities   JobActivity[]
+}
+
+model ServiceCatalog {
+  id                   String           @id @default(cuid())
+  name                 String           @unique
+  defaultUnitPriceCents Int
+  active               Boolean          @default(true)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  jobServices          JobServiceLine[]
+}
+
+model JobServiceLine {
+  id               String          @id @default(cuid())
+  jobId            String
+  job              Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  serviceCatalogId String?
+  serviceCatalog   ServiceCatalog? @relation(fields: [serviceCatalogId], references: [id])
+  name             String
+  qty              Int             @default(1)
+  unitPriceCents   Int
+  createdAt        DateTime        @default(now())
+}
+
+model JobMedia {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  url       String
+  filename  String?
+  createdAt DateTime @default(now())
+}
+
+model JobActivity {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  type      String // STATUS_CHANGE, SMS_SENT, NOTE, CREATED, DEPOSIT_PAID
+  message   String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model StoreSettings {
+  id            String   @id @default("default")
+  storeName     String   @default("My Jewelry Store")
+  phone         String?
+  email         String?
+  address       String?
+  businessHours String?
+  smsEnabled    Boolean  @default(false)
+  smsProvider   String   @default("twilio")
+  smsFromNumber String?
+  updatedAt     DateTime @updatedAt
+}
