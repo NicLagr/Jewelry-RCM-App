@@ -2,14 +2,12 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
-// For local development, use SQLite
-// For production, switch to PostgreSQL by changing provider to "postgresql"
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model User {
@@ -39,11 +37,11 @@ model Customer {
 }
 
 model Job {
-  id           String        @id @default(cuid())
-  jobNumber    Int           @unique
+  id           String           @id @default(cuid())
+  jobNumber    Int              @unique
   customerId   String
-  customer     Customer      @relation(fields: [customerId], references: [id])
-  status       String        @default("INTAKE")
+  customer     Customer         @relation(fields: [customerId], references: [id])
+  status       String           @default("INTAKE")
   itemType     String // Ring, Necklace, Bracelet, Watch, Earrings, Other
   itemMetal    String? // Gold, Silver, Platinum, etc.
   itemStone    String? // Diamond, Ruby, etc.
@@ -51,23 +49,23 @@ model Job {
   issue        String
   promisedAt   DateTime
   assigneeId   String?
-  assignee     User?         @relation("AssignedJobs", fields: [assigneeId], references: [id])
-  depositCents Int           @default(0)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  assignee     User?            @relation("AssignedJobs", fields: [assigneeId], references: [id])
+  depositCents Int              @default(0)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
   services     JobServiceLine[]
   media        JobMedia[]
   activities   JobActivity[]
 }
 
 model ServiceCatalog {
-  id                   String           @id @default(cuid())
-  name                 String           @unique
+  id                    String           @id @default(cuid())
+  name                  String           @unique
   defaultUnitPriceCents Int
-  active               Boolean          @default(true)
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
-  jobServices          JobServiceLine[]
+  active                Boolean          @default(true)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  jobServices           JobServiceLine[]
 }
 
 model JobServiceLine {
