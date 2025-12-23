@@ -133,29 +133,29 @@ export default function CustomersPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Summary Stats and Filters Row */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          {/* Summary Stats */}
+        {/* Summary Stats */}
           <div className="flex flex-wrap gap-4">
             <div className="bg-white rounded-xl border border-slate-200 px-5 py-3 flex items-center gap-3">
               <Users className="h-5 w-5 text-slate-400" />
-              <div>
+                <div>
                 <p className="text-xs text-slate-500 uppercase tracking-wide">Total Customers</p>
                 <p className="text-xl font-bold text-slate-900">{totalCustomers}</p>
               </div>
-            </div>
+                </div>
             <div className="bg-white rounded-xl border border-slate-200 px-5 py-3 flex items-center gap-3">
               <Briefcase className="h-5 w-5 text-slate-400" />
-              <div>
+                <div>
                 <p className="text-xs text-slate-500 uppercase tracking-wide">Active Jobs</p>
                 <p className="text-xl font-bold text-slate-900">{totalActiveJobs}</p>
               </div>
-            </div>
+                </div>
             <div className="bg-white rounded-xl border border-slate-200 px-5 py-3 flex items-center gap-3">
               <DollarSign className="h-5 w-5 text-slate-400" />
-              <div>
+                <div>
                 <p className="text-xs text-slate-500 uppercase tracking-wide">Lifetime Value</p>
                 <p className="text-xl font-bold text-slate-900">{formatCents(totalLifetimeValue)}</p>
               </div>
-            </div>
+        </div>
           </div>
 
           {/* Filter Tabs */}

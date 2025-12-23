@@ -209,9 +209,9 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
               </Link>
-              <h1 className="text-2xl font-bold text-slate-900">
+                  <h1 className="text-2xl font-bold text-slate-900">
                 Ticket #{job.jobNumber} — Job Detail
-              </h1>
+                  </h1>
             </div>
           </div>
         </div>
@@ -234,7 +234,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-500">Promised date</span>
                 <span className="font-medium">{formattedPromised}</span>
-              </div>
+                </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-500">Assignee</span>
                 <Select
@@ -277,7 +277,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                       <CardTitle className="text-base font-semibold">Customer</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
                         <span className="font-medium text-slate-900">
                           {job.customer.firstName} {job.customer.lastName}
                         </span>
@@ -385,151 +385,151 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
                   {/* Action Buttons */}
                   <div className="space-y-3">
-                    <Button
-                      variant="outline"
+              <Button
+                variant="outline"
                       className="w-full"
-                      onClick={() => setShowSmsModal(true)}
-                      disabled={!job.customer.phone}
-                    >
-                      <MessageSquare className="h-5 w-5 mr-2" />
-                      Send Text
-                    </Button>
-                    {job.status !== "READY" && job.status !== "PICKED_UP" && (
-                      <Button
+                onClick={() => setShowSmsModal(true)}
+                disabled={!job.customer.phone}
+              >
+                <MessageSquare className="h-5 w-5 mr-2" />
+                Send Text
+              </Button>
+              {job.status !== "READY" && job.status !== "PICKED_UP" && (
+                <Button
                         className="w-full"
-                        onClick={handleMarkReady}
-                        disabled={updating}
-                      >
-                        <CheckCircle className="h-5 w-5 mr-2" />
-                        Mark Ready
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
+                  onClick={handleMarkReady}
+                  disabled={updating}
+                >
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  Mark Ready
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+              </TabsContent>
 
             <TabsContent value="activity" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Activity Timeline</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {job.activities.length === 0 ? (
-                      <p className="text-slate-500 text-center py-8">
-                        No activity yet
-                      </p>
-                    ) : (
-                      job.activities.map((activity, index) => (
-                        <div
-                          key={activity.id}
-                          className={cn(
-                            "flex gap-4 pb-4",
-                            index !== job.activities.length - 1 &&
-                              "border-b border-slate-100"
-                          )}
-                        >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Activity Timeline</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {job.activities.length === 0 ? (
+                        <p className="text-slate-500 text-center py-8">
+                          No activity yet
+                        </p>
+                      ) : (
+                        job.activities.map((activity, index) => (
                           <div
+                            key={activity.id}
                             className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
-                              activity.type === "STATUS_CHANGE"
-                                ? "bg-blue-100 text-blue-600"
-                                : activity.type === "SMS_SENT"
-                                ? "bg-green-100 text-green-600"
-                                : activity.type === "CREATED"
-                                ? "bg-purple-100 text-purple-600"
-                                : "bg-slate-100 text-slate-600"
+                              "flex gap-4 pb-4",
+                              index !== job.activities.length - 1 &&
+                                "border-b border-slate-100"
                             )}
                           >
-                            {activity.type === "STATUS_CHANGE" ? (
-                              <Activity className="h-5 w-5" />
-                            ) : activity.type === "SMS_SENT" ? (
-                              <MessageSquare className="h-5 w-5" />
-                            ) : (
-                              <FileText className="h-5 w-5" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-slate-900">{activity.message}</p>
-                            <div className="flex items-center gap-2 mt-1 text-sm text-slate-500">
-                              <span>{formatDateTime(activity.createdAt)}</span>
-                              {activity.user && (
-                                <>
-                                  <span>•</span>
-                                  <span>{activity.user.name}</span>
-                                </>
+                            <div
+                              className={cn(
+                                "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
+                                activity.type === "STATUS_CHANGE"
+                                  ? "bg-blue-100 text-blue-600"
+                                  : activity.type === "SMS_SENT"
+                                  ? "bg-green-100 text-green-600"
+                                  : activity.type === "CREATED"
+                                  ? "bg-purple-100 text-purple-600"
+                                  : "bg-slate-100 text-slate-600"
+                              )}
+                            >
+                              {activity.type === "STATUS_CHANGE" ? (
+                                <Activity className="h-5 w-5" />
+                              ) : activity.type === "SMS_SENT" ? (
+                                <MessageSquare className="h-5 w-5" />
+                              ) : (
+                                <FileText className="h-5 w-5" />
                               )}
                             </div>
+                            <div className="flex-1">
+                              <p className="text-slate-900">{activity.message}</p>
+                              <div className="flex items-center gap-2 mt-1 text-sm text-slate-500">
+                                <span>{formatDateTime(activity.createdAt)}</span>
+                                {activity.user && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{activity.user.name}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                        ))
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
             <TabsContent value="media" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Photos & Media</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {job.media.length === 0 ? (
-                    <div className="text-center py-12">
-                      <ImageIcon className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                      <p className="text-slate-500">No photos uploaded</p>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Photos & Media</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {job.media.length === 0 ? (
+                      <div className="text-center py-12">
+                        <ImageIcon className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                        <p className="text-slate-500">No photos uploaded</p>
                       <p className="text-xs text-slate-500 mt-2">
                         Note: Photo upload not yet implemented for demo
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                      {job.media.map((media) => (
-                        <div
-                          key={media.id}
-                          className="aspect-square bg-slate-100 rounded-lg overflow-hidden"
-                        >
-                          <img
-                            src={media.url}
-                            alt={media.filename || "Job photo"}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {job.media.map((media) => (
+                          <div
+                            key={media.id}
+                            className="aspect-square bg-slate-100 rounded-lg overflow-hidden"
+                          >
+                            <img
+                              src={media.url}
+                              alt={media.filename || "Job photo"}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
             <TabsContent value="billing" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Billing Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between py-2 border-b border-slate-100">
-                      <span className="text-slate-600">Subtotal</span>
-                      <span className="font-medium">{formatCents(subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-slate-100">
-                      <span className="text-slate-600">Deposit Paid</span>
-                      <span className="font-medium text-green-600">
-                        -{formatCents(job.depositCents)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-3 text-lg">
-                      <span className="font-semibold">Balance Due</span>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Billing Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between py-2 border-b border-slate-100">
+                        <span className="text-slate-600">Subtotal</span>
+                        <span className="font-medium">{formatCents(subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-slate-100">
+                        <span className="text-slate-600">Deposit Paid</span>
+                        <span className="font-medium text-green-600">
+                          -{formatCents(job.depositCents)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-3 text-lg">
+                        <span className="font-semibold">Balance Due</span>
                       <span className="font-bold">{formatCents(subtotal - job.depositCents)}</span>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
         </div>
       </div>
 

@@ -194,11 +194,11 @@ export default function JobsPage() {
                   <div className="flex items-center justify-between mb-3 px-1">
                     <h2 className="font-semibold text-slate-900 text-base">
                       {status.label}
-                    </h2>
+                      </h2>
                     <Badge variant="secondary" className="text-xs">
                       {statusJobs.length}
                     </Badge>
-                  </div>
+                    </div>
                   
                   {/* Column Content */}
                   <div className="bg-slate-100 rounded-xl p-3 flex-1 min-h-[400px]">

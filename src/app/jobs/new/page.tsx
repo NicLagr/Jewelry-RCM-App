@@ -232,121 +232,121 @@ export default function NewTicketPage() {
           {/* Left Column - Customer Info & Services */}
           <div className="space-y-6">
             {/* Customer Info */}
-            <Card>
+        <Card>
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Customer Info</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {!isNewCustomer && !selectedCustomer && (
-                  <div className="relative">
-                    <div className="relative">
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!isNewCustomer && !selectedCustomer && (
+              <div className="relative">
+                <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      <Input
+                  <Input
                         placeholder="Search customers..."
-                        value={customerSearch}
-                        onChange={(e) => {
-                          setCustomerSearch(e.target.value);
-                          setShowCustomerSearch(true);
-                        }}
-                        onFocus={() => setShowCustomerSearch(true)}
+                    value={customerSearch}
+                    onChange={(e) => {
+                      setCustomerSearch(e.target.value);
+                      setShowCustomerSearch(true);
+                    }}
+                    onFocus={() => setShowCustomerSearch(true)}
                         className="pl-10"
-                      />
-                    </div>
-                    {showCustomerSearch && customerSearch && (
+                  />
+                </div>
+                {showCustomerSearch && customerSearch && (
                       <div className="absolute z-10 w-full mt-2 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        {filteredCustomers.length === 0 ? (
-                          <div className="p-4 text-center text-slate-500">
-                            No customers found
-                          </div>
-                        ) : (
-                          filteredCustomers.map((customer) => (
-                            <button
-                              key={customer.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedCustomer(customer);
-                                setShowCustomerSearch(false);
-                                setCustomerSearch("");
+                    {filteredCustomers.length === 0 ? (
+                      <div className="p-4 text-center text-slate-500">
+                        No customers found
+                      </div>
+                    ) : (
+                      filteredCustomers.map((customer) => (
+                        <button
+                          key={customer.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCustomer(customer);
+                            setShowCustomerSearch(false);
+                            setCustomerSearch("");
                                 setNewCustomer({
                                   firstName: customer.firstName,
                                   lastName: customer.lastName,
                                   phone: customer.phone || "",
                                   email: customer.email || "",
                                 });
-                              }}
-                              className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0"
-                            >
-                              <div className="font-medium">
-                                {customer.firstName} {customer.lastName}
-                              </div>
-                              <div className="text-sm text-slate-500">
-                                {customer.phone} {customer.email && `• ${customer.email}`}
-                              </div>
-                            </button>
-                          ))
-                        )}
-                      </div>
+                          }}
+                          className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0"
+                        >
+                          <div className="font-medium">
+                            {customer.firstName} {customer.lastName}
+                          </div>
+                          <div className="text-sm text-slate-500">
+                            {customer.phone} {customer.email && `• ${customer.email}`}
+                          </div>
+                        </button>
+                      ))
                     )}
                   </div>
                 )}
+              </div>
+            )}
 
                 {(selectedCustomer || isNewCustomer) && (
                   <div className="space-y-4">
                     <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                         onClick={() => {
                           setSelectedCustomer(null);
                           setIsNewCustomer(false);
                           setNewCustomer({ firstName: "", lastName: "", phone: "", email: "" });
                         }}
-                      >
+                  >
                         Change Customer
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
                         <Label className="text-slate-500 text-sm">First Name</Label>
-                        <Input
+                    <Input
                           value={selectedCustomer ? selectedCustomer.firstName : newCustomer.firstName}
                           onChange={(e) => setNewCustomer({ ...newCustomer, firstName: e.target.value })}
                           disabled={!!selectedCustomer}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
                         <Label className="text-slate-500 text-sm">Last Name</Label>
-                        <Input
+                    <Input
                           value={selectedCustomer ? selectedCustomer.lastName : newCustomer.lastName}
                           onChange={(e) => setNewCustomer({ ...newCustomer, lastName: e.target.value })}
                           disabled={!!selectedCustomer}
-                          className="mt-1"
-                        />
+                      className="mt-1"
+                    />
                       </div>
-                    </div>
-                    <div>
+                  </div>
+                  <div>
                       <Label className="text-slate-500 text-sm">Phone</Label>
-                      <Input
-                        type="tel"
+                    <Input
+                      type="tel"
                         value={selectedCustomer ? (selectedCustomer.phone || "") : newCustomer.phone}
                         onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
                         disabled={!!selectedCustomer}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
                       <Label className="text-slate-500 text-sm">Email</Label>
-                      <Input
-                        type="email"
+                    <Input
+                      type="email"
                         value={selectedCustomer ? (selectedCustomer.email || "") : newCustomer.email}
                         onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
                         disabled={!!selectedCustomer}
-                        className="mt-1"
-                      />
-                    </div>
+                      className="mt-1"
+                    />
                   </div>
+                </div>
                 )}
 
                 {!selectedCustomer && !isNewCustomer && (
@@ -359,16 +359,16 @@ export default function NewTicketPage() {
                     <Plus className="h-4 w-4 mr-2" />
                     Add New Customer
                   </Button>
-                )}
-              </CardContent>
-            </Card>
+            )}
+          </CardContent>
+        </Card>
 
-            {/* Services */}
-            <Card>
+        {/* Services */}
+        <Card>
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Services</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          </CardHeader>
+          <CardContent className="space-y-4">
                 {/* Services Table */}
                 {serviceLines.length > 0 && (
                   <div className="overflow-x-auto">
@@ -386,89 +386,89 @@ export default function NewTicketPage() {
                         {serviceLines.map((line) => (
                           <tr key={line.id} className="border-b border-slate-100">
                             <td className="py-2">
-                              <Select
-                                value={line.serviceCatalogId || "custom"}
-                                onChange={(e) => handleServiceSelect(line.id, e.target.value)}
+                    <Select
+                      value={line.serviceCatalogId || "custom"}
+                      onChange={(e) => handleServiceSelect(line.id, e.target.value)}
                                 className="text-sm"
-                              >
+                    >
                                 <option value="custom">Select or type service...</option>
-                                {services.map((service) => (
-                                  <option key={service.id} value={service.id}>
+                      {services.map((service) => (
+                        <option key={service.id} value={service.id}>
                                     {service.name}
-                                  </option>
-                                ))}
-                              </Select>
-                              {!line.serviceCatalogId && (
-                                <Input
+                        </option>
+                      ))}
+                    </Select>
+                    {!line.serviceCatalogId && (
+                      <Input
                                   placeholder="Custom service name"
-                                  value={line.name}
+                        value={line.name}
                                   onChange={(e) => updateServiceLine(line.id, { name: e.target.value })}
                                   className="mt-1 text-sm"
-                                />
-                              )}
+                      />
+                    )}
                             </td>
                             <td className="py-2 text-center">
-                              <Input
-                                type="number"
-                                min="1"
-                                value={line.qty}
+                    <Input
+                      type="number"
+                      min="1"
+                      value={line.qty}
                                 onChange={(e) => updateServiceLine(line.id, { qty: parseInt(e.target.value) || 1 })}
                                 className="w-16 text-center text-sm"
-                              />
+                    />
                             </td>
                             <td className="py-2 text-right">
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={(line.unitPriceCents / 100).toFixed(2)}
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={(line.unitPriceCents / 100).toFixed(2)}
                                 onChange={(e) => updateServiceLine(line.id, { unitPriceCents: Math.round(parseFloat(e.target.value) * 100) || 0 })}
                                 className="w-24 text-right text-sm"
-                              />
+                    />
                             </td>
                             <td className="py-2 text-right font-medium">
                               {formatCents(line.qty * line.unitPriceCents)}
                             </td>
                             <td className="py-2">
-                              <Button
-                                type="button"
-                                variant="ghost"
+                <Button
+                  type="button"
+                  variant="ghost"
                                 size="sm"
-                                onClick={() => removeServiceLine(line.id)}
+                  onClick={() => removeServiceLine(line.id)}
                                 className="h-8 w-8 p-0"
-                              >
+                >
                                 <X className="h-4 w-4 text-slate-400" />
-                              </Button>
+                </Button>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                  </div>
+              </div>
                 )}
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addServiceLine}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addServiceLine}
                   className="w-full"
-                >
+            >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Service
-                </Button>
+              Add Service
+            </Button>
 
-                {serviceLines.length > 0 && (
+            {serviceLines.length > 0 && (
                   <div className="flex justify-end pt-2 border-t border-slate-200">
-                    <div className="text-right">
+                <div className="text-right">
                       <span className="text-slate-500">Subtotal:</span>
                       <span className="ml-3 text-lg font-bold text-slate-900">
-                        {formatCents(subtotal)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    {formatCents(subtotal)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
           </div>
 
           {/* Right Column - Item Info & Photo Upload */}
@@ -493,7 +493,7 @@ export default function NewTicketPage() {
             </Card>
 
             {/* Photo Upload */}
-            <Card>
+        <Card>
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Photo Upload</CardTitle>
               </CardHeader>
@@ -544,7 +544,7 @@ export default function NewTicketPage() {
                   className="mt-1"
                 />
               </div>
-            </div>
+              </div>
 
             {/* Quick Select Buttons */}
             <div className="flex flex-wrap items-center gap-2">
@@ -586,14 +586,14 @@ export default function NewTicketPage() {
               <Button type="button" variant="outline" size="lg" disabled title="Not yet implemented">
                 Save Draft
               </Button>
-            <Button
-                type="submit"
-                size="lg"
+          <Button
+            type="submit"
+            size="lg"
                 className={cn(!isValid && "opacity-50")}
-                disabled={!isValid || loading}
-              >
+            disabled={!isValid || loading}
+          >
                 {loading ? "Creating..." : "Save Job"}
-              </Button>
+          </Button>
             </div>
             <p className="text-xs text-slate-400 text-right">
               Save Draft not yet implemented for demo

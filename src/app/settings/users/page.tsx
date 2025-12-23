@@ -219,20 +219,20 @@ export default function UsersSettingsPage() {
                     
                     return (
                       <tr
-                        key={user.id}
+                  key={user.id}
                         className="border-b border-slate-100 hover:bg-slate-50"
                       >
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-[#1a4d3e] flex items-center justify-center text-white font-medium text-sm">
-                              {user.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")
+                      {user.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
                                 .slice(0, 2)
                                 .toUpperCase()}
-                            </div>
-                            <div>
+                    </div>
+                    <div>
                               <p className="font-medium text-slate-900">{user.name}</p>
                               <p className="text-sm text-slate-500">{title}</p>
                             </div>
@@ -244,7 +244,7 @@ export default function UsersSettingsPage() {
                         <td className="py-4 px-4">
                           <Badge className={cn("text-xs", roleInfo.color)}>
                             {roleInfo.label}
-                          </Badge>
+                        </Badge>
                         </td>
                         <td className="py-4 px-4">
                           <Badge className={cn("text-xs", statusInfo.color)}>
@@ -255,13 +255,13 @@ export default function UsersSettingsPage() {
                           {getLastActive(user)}
                         </td>
                         <td className="py-4 px-4 text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingUser(user)}
-                          >
-                            Edit
-                          </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingUser(user)}
+                    >
+                      Edit
+                    </Button>
                         </td>
                       </tr>
                     );

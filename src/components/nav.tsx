@@ -193,9 +193,9 @@ export function Nav({ user }: NavProps) {
                       .slice(0, 2)
                       .toUpperCase()}
                   </div>
-                  <div>
-                    <p className="font-medium text-slate-900">{user.name}</p>
-                    <p className="text-sm text-slate-500">{user.role}</p>
+                <div>
+                  <p className="font-medium text-slate-900">{user.name}</p>
+                  <p className="text-sm text-slate-500">{user.role}</p>
                   </div>
                 </div>
                 <Button variant="ghost" size="sm" onClick={handleLogout}>

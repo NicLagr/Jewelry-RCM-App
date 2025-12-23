@@ -35,7 +35,7 @@ This is a working prototype with core features implemented. Some features are ma
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 18+ 
 - npm
 
 ### Installation

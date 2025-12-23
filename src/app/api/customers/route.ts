@@ -45,15 +45,15 @@ export async function GET(request: Request) {
     });
 
     // Calculate stats for each customer
-    const customersWithStats = customers.map((customer) => {
+    const customersWithStats = customers.map((customer: typeof customers[number]) => {
       const totalJobs = customer.jobs.length;
       const activeJobs = customer.jobs.filter(
-        (j) => !["READY", "PICKED_UP"].includes(j.status)
+        (j: typeof customer.jobs[number]) => !["READY", "PICKED_UP"].includes(j.status)
       ).length;
-      const lifetimeValueCents = customer.jobs.reduce((sum, job) => {
+      const lifetimeValueCents = customer.jobs.reduce((sum: number, job: typeof customer.jobs[number]) => {
         return (
           sum +
-          job.services.reduce((s, svc) => s + svc.unitPriceCents * svc.qty, 0)
+          job.services.reduce((s: number, svc: typeof job.services[number]) => s + svc.unitPriceCents * svc.qty, 0)
         );
       }, 0);
 

@@ -175,27 +175,27 @@ export default function StoreSettingsPage() {
                 className="mt-1"
               />
             </div>
-            <div>
+              <div>
               <Label className="text-slate-500 text-sm">Phone Number</Label>
-              <Input
-                type="tel"
-                value={settings?.phone || ""}
-                onChange={(e) =>
-                  setSettings(settings ? { ...settings, phone: e.target.value } : null)
-                }
-                className="mt-1"
-              />
-            </div>
-            <div>
+                <Input
+                  type="tel"
+                  value={settings?.phone || ""}
+                  onChange={(e) =>
+                    setSettings(settings ? { ...settings, phone: e.target.value } : null)
+                  }
+                  className="mt-1"
+                />
+              </div>
+              <div>
               <Label className="text-slate-500 text-sm">Email Address</Label>
-              <Input
-                type="email"
-                value={settings?.email || ""}
-                onChange={(e) =>
-                  setSettings(settings ? { ...settings, email: e.target.value } : null)
-                }
-                className="mt-1"
-              />
+                <Input
+                  type="email"
+                  value={settings?.email || ""}
+                  onChange={(e) =>
+                    setSettings(settings ? { ...settings, email: e.target.value } : null)
+                  }
+                  className="mt-1"
+                />
             </div>
             <div>
               <Label className="text-slate-500 text-sm">Street Address</Label>
@@ -295,24 +295,24 @@ export default function StoreSettingsPage() {
             <CardTitle className="text-lg">Default Service Prices</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {services.map((service) => (
-              <div
-                key={service.id}
+              {services.map((service) => (
+                <div
+                  key={service.id}
                 className="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0"
-              >
+                >
                 <span className="flex-1 text-slate-900">{service.name}</span>
                 <span className="font-medium text-slate-900">
                   ${(service.defaultUnitPriceCents / 100).toFixed(2)}
                 </span>
-                <Button
-                  variant="ghost"
+                  <Button
+                    variant="ghost"
                   size="sm"
                   className="h-8 w-8 p-0"
-                >
+                  >
                   <Edit2 className="h-4 w-4 text-slate-400" />
-                </Button>
-              </div>
-            ))}
+                  </Button>
+                </div>
+              ))}
 
             <Button
               variant="outline"
@@ -321,7 +321,7 @@ export default function StoreSettingsPage() {
             >
               <Plus className="h-4 w-4 mr-2" />
               Add New Service
-            </Button>
+              </Button>
           </CardContent>
         </Card>
 
