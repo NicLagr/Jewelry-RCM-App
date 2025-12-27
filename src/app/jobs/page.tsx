@@ -329,7 +329,9 @@ function JobCard({ job }: { job: Job }) {
 
         {/* Item and Date */}
         <p className="text-sm text-slate-600 mb-1">
-          {job.itemType} • {isCompleted ? `Completed: ${formatDateShort(job.updatedAt)}` : `Promised: ${formatDateShort(job.promisedAt)}`}
+          {job.itemType} • {isCompleted 
+            ? `Completed: ${formatDateShort(job.updatedAt)} (was ${formatDateShort(job.promisedAt)})` 
+            : `Promised: ${formatDateShort(job.promisedAt)}`}
         </p>
 
         {/* Issue */}
