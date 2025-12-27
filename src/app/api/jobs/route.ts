@@ -20,6 +20,9 @@ export async function GET(request: Request) {
 
     if (status) {
       where.status = status;
+    } else if (search) {
+      // When searching, include all jobs (including archived)
+      // No status filter applied
     } else {
       // By default, exclude archived jobs from the main board
       where.status = { not: "ARCHIVED" };

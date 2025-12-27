@@ -54,22 +54,20 @@ const STATUSES = [
   { key: "PICKED_UP", label: "Picked Up" },
 ];
 
-// Helper to check if a date is within the current week (Sunday to Saturday)
-function isWithinCurrentWeek(dateString: string): boolean {
+// Helper to check if a date is within the current month
+function isWithinCurrentMonth(dateString: string): boolean {
   const date = new Date(dateString);
   const now = new Date();
   
-  // Get start of current week (Sunday)
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
+  // Get start of current month
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  startOfMonth.setHours(0, 0, 0, 0);
   
-  // Get end of current week (Saturday)
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23, 59, 59, 999);
+  // Get end of current month
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  endOfMonth.setHours(23, 59, 59, 999);
   
-  return date >= startOfWeek && date <= endOfWeek;
+  return date >= startOfMonth && date <= endOfMonth;
 }
 
 export default function JobsPage() {
@@ -106,9 +104,9 @@ export default function JobsPage() {
   const getJobsByStatus = (status: string) => {
     let filtered = jobs.filter((job) => job.status === status);
     
-    // For Picked Up, only show jobs from current week
+    // For Picked Up, only show jobs from current month
     if (status === "PICKED_UP") {
-      filtered = filtered.filter((job) => isWithinCurrentWeek(job.updatedAt || job.promisedAt));
+      filtered = filtered.filter((job) => isWithinCurrentMonth(job.updatedAt || job.promisedAt));
     }
     
     return filtered;
