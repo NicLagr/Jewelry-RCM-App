@@ -209,49 +209,75 @@ export default function JobsPage() {
         </div>
       </div>
 
-      {/* Kanban Board */}
+      {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <p className="text-xs text-slate-500 mb-4">
-          Note: Drag-and-drop between columns not yet implemented for demo. Click cards to change status.
-        </p>
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1a4d3e]" />
           </div>
+        ) : searchQuery ? (
+          /* Search Results - List View */
+          <div>
+            <p className="text-sm text-slate-500 mb-4">
+              Found {jobs.length} result{jobs.length !== 1 ? "s" : ""} for &quot;{searchQuery}&quot;
+            </p>
+            {jobs.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-slate-500">No tickets found matching your search.</p>
+                <Link href="/jobs">
+                  <Button variant="outline" className="mt-4">
+                    Clear Search
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {jobs.map((job) => (
+                  <JobCard key={job.id} job={job} />
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {STATUSES.map((status) => {
-              const statusJobs = getJobsByStatus(status.key);
-              return (
-                <div key={status.key} className="flex flex-col">
-                  {/* Column Header */}
-                  <div className="flex items-center justify-between mb-3 px-1">
-                    <h2 className="font-semibold text-slate-900 text-base">
-                      {status.label}
-                      </h2>
-                    <Badge variant="secondary" className="text-xs">
-                      {statusJobs.length}
-                    </Badge>
-                    </div>
-                  
-                  {/* Column Content */}
-                  <div className="bg-slate-100 rounded-xl p-3 flex-1 min-h-[400px]">
-                    <div className="space-y-3 max-h-[calc(100vh-320px)] overflow-y-auto">
-                      {statusJobs.length === 0 ? (
-                        <p className="text-sm text-slate-500 text-center py-8">
-                          No jobs
-                        </p>
-                      ) : (
-                        statusJobs.map((job) => (
-                          <JobCard key={job.id} job={job} />
-                        ))
-                      )}
+          /* Kanban Board - Default View */
+          <>
+            <p className="text-xs text-slate-500 mb-4">
+              Note: Drag-and-drop between columns not yet implemented for demo. Click cards to change status.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {STATUSES.map((status) => {
+                const statusJobs = getJobsByStatus(status.key);
+                return (
+                  <div key={status.key} className="flex flex-col">
+                    {/* Column Header */}
+                    <div className="flex items-center justify-between mb-3 px-1">
+                      <h2 className="font-semibold text-slate-900 text-base">
+                        {status.label}
+                        </h2>
+                      <Badge variant="secondary" className="text-xs">
+                        {statusJobs.length}
+                      </Badge>
+                      </div>
+                    
+                    {/* Column Content */}
+                    <div className="bg-slate-100 rounded-xl p-3 flex-1 min-h-[400px]">
+                      <div className="space-y-3 max-h-[calc(100vh-320px)] overflow-y-auto">
+                        {statusJobs.length === 0 ? (
+                          <p className="text-sm text-slate-500 text-center py-8">
+                            No jobs
+                          </p>
+                        ) : (
+                          statusJobs.map((job) => (
+                            <JobCard key={job.id} job={job} />
+                          ))
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>
