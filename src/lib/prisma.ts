@@ -8,7 +8,12 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const pool = globalForPrisma.pool ?? new pg.Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = globalForPrisma.pool ?? new pg.Pool({ 
+    connectionString: process.env.DATABASE_URL,
+    max: 5, // Limit max connections for serverless
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+  });
   if (!globalForPrisma.pool) globalForPrisma.pool = pool;
   
   const adapter = new PrismaPg(pool);
@@ -17,6 +22,11 @@ function createPrismaClient() {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+// Always cache in production for serverless
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+} else {
+  globalForPrisma.prisma = prisma;
+}
 
 export default prisma;
