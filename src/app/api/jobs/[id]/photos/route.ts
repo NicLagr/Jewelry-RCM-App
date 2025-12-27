@@ -70,11 +70,10 @@ export async function POST(
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic"];
-    if (!allowedTypes.includes(file.type)) {
+    // Validate file type - allow any image type
+    if (!file.type.startsWith("image/")) {
       return NextResponse.json(
-        { error: "Invalid file type. Allowed: JPEG, PNG, WebP, HEIC" },
+        { error: "Invalid file type. Only images are allowed." },
         { status: 400 }
       );
     }

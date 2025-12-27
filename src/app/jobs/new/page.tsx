@@ -202,10 +202,15 @@ export default function NewTicketPage() {
         const formData = new FormData();
         formData.append("file", photo.file);
 
-        await fetch(`/api/jobs/${jobId}/photos`, {
+        const res = await fetch(`/api/jobs/${jobId}/photos`, {
           method: "POST",
           body: formData,
         });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          console.error("Photo upload failed:", errorData);
+        }
       }
     } catch (error) {
       console.error("Error uploading photos:", error);
