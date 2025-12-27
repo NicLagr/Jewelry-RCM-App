@@ -286,15 +286,17 @@ export default function JobsPage() {
 
 function JobCard({ job }: { job: Job }) {
   const overdue = isOverdue(job.promisedAt, job.status);
-  const promisedToday = isPromisedToday(job.promisedAt);
+  const isCompleted = job.status === "PICKED_UP" || job.status === "ARCHIVED";
 
   // Format customer name as initial + last name (e.g., "O. Rivera")
   const customerInitial = job.customer.firstName[0];
   const customerDisplay = `${customerInitial}. ${job.customer.lastName}`;
 
-  // Format promised date as MM/DD
-  const promisedDate = new Date(job.promisedAt);
-  const formattedPromised = `${String(promisedDate.getMonth() + 1).padStart(2, '0')}/${String(promisedDate.getDate()).padStart(2, '0')}`;
+  // Format dates as MM/DD
+  const formatDateShort = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+  };
 
   return (
     <Link href={`/jobs/${job.id}`}>
@@ -325,9 +327,9 @@ function JobCard({ job }: { job: Job }) {
           </Badge>
         </div>
 
-        {/* Item and Promised Date */}
+        {/* Item and Date */}
         <p className="text-sm text-slate-600 mb-1">
-          {job.itemType} • Promised: {formattedPromised}
+          {job.itemType} • {isCompleted ? `Completed: ${formatDateShort(job.updatedAt)}` : `Promised: ${formatDateShort(job.promisedAt)}`}
         </p>
 
         {/* Issue */}
