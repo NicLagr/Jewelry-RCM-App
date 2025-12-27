@@ -151,6 +151,10 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     await updateJob({ status: "READY" });
   };
 
+  const handleMarkPickedUp = async () => {
+    await updateJob({ status: "PICKED_UP" });
+  };
+
   const handleSendSms = async () => {
     if (!job || !job.customer.phone || !smsMessage) return;
 
@@ -453,6 +457,17 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 >
                   <CheckCircle className="h-5 w-5 mr-2" />
                   Mark Ready
+                </Button>
+              )}
+              {job.status === "READY" && (
+                <Button
+                  className="w-full"
+                  variant="gold"
+                  onClick={handleMarkPickedUp}
+                  disabled={updating}
+                >
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  Mark Picked Up
                 </Button>
               )}
             </div>
