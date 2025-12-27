@@ -1,32 +1,28 @@
 "use client";
 
-import { useState, useEffect, useCallback, use } from "react";
+import { useState, useEffect, useCallback, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
   MessageSquare,
   CheckCircle,
-  User,
-  Phone,
-  Mail,
-  Package,
   Image as ImageIcon,
   FileText,
   Activity,
-  Calendar,
+  Upload,
+  X,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  formatDate,
   formatDateTime,
   formatCents,
-  getStatusColor,
   getStatusLabel,
   isOverdue,
   cn,
@@ -97,6 +93,10 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [updating, setUpdating] = useState(false);
   const [smsMessage, setSmsMessage] = useState("");
   const [showSmsModal, setShowSmsModal] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchJob = useCallback(async () => {
     try {
@@ -172,6 +172,57 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       }
     } catch (error) {
       console.error("Error sending SMS:", error);
+    }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !job) return;
+
+    setUploadingPhoto(true);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        // Validate file type
+        if (!file.type.startsWith("image/")) continue;
+        // Validate file size (10MB max)
+        if (file.size > 10 * 1024 * 1024) continue;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        await fetch(`/api/jobs/${job.id}/photos`, {
+          method: "POST",
+          body: formData,
+        });
+      }
+      fetchJob();
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+    } finally {
+      setUploadingPhoto(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string) => {
+    if (!job) return;
+
+    setDeletingPhotoId(photoId);
+    try {
+      const res = await fetch(`/api/jobs/${job.id}/photos/${photoId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        fetchJob();
+      }
+    } catch (error) {
+      console.error("Error deleting photo:", error);
+    } finally {
+      setDeletingPhotoId(null);
     }
   };
 
@@ -472,30 +523,85 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
             <TabsContent value="media" className="mt-6">
                 <Card>
-                  <CardHeader>
+                  <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Photos & Media</CardTitle>
+                    <div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingPhoto}
+                      >
+                        {uploadingPhoto ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Add Photos
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {job.media.length === 0 ? (
                       <div className="text-center py-12">
                         <ImageIcon className="h-12 w-12 text-slate-300 mx-auto mb-3" />
                         <p className="text-slate-500">No photos uploaded</p>
-                      <p className="text-xs text-slate-500 mt-2">
-                        Note: Photo upload not yet implemented for demo
-                        </p>
+                        <Button
+                          variant="outline"
+                          className="mt-4"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploadingPhoto}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload First Photo
+                        </Button>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {job.media.map((media) => (
                           <div
                             key={media.id}
-                            className="aspect-square bg-slate-100 rounded-lg overflow-hidden"
+                            className="relative aspect-square bg-slate-100 rounded-lg overflow-hidden group cursor-pointer"
+                            onClick={() => setSelectedPhoto(media.url)}
                           >
                             <img
                               src={media.url}
                               alt={media.filename || "Job photo"}
                               className="w-full h-full object-cover"
                             />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeletePhoto(media.id);
+                              }}
+                              disabled={deletingPhotoId === media.id}
+                              className="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              {deletingPhotoId === media.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </button>
+                            {media.filename && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-2 py-1 truncate opacity-0 group-hover:opacity-100 transition-opacity">
+                                {media.filename}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -579,6 +685,27 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               </p>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Photo Lightbox */}
+      {selectedPhoto && (
+        <div
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white hover:text-slate-300 transition-colors"
+            onClick={() => setSelectedPhoto(null)}
+          >
+            <X className="h-8 w-8" />
+          </button>
+          <img
+            src={selectedPhoto}
+            alt="Full size photo"
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

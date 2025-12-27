@@ -1,17 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Plus,
-  Trash2,
   AlertTriangle,
   Search,
-  Camera,
-  FileText,
-  ImageIcon,
   X,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -21,6 +19,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCents, cn } from "@/lib/utils";
+
+interface PendingPhoto {
+  id: string;
+  file: File;
+  preview: string;
+}
 
 interface Customer {
   id: string;
@@ -58,7 +62,9 @@ export default function NewTicketPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [customerSearch, setCustomerSearch] = useState("");
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
-  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -153,6 +159,63 @@ export default function NewTicketPage() {
     0
   );
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newPhotos: PendingPhoto[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      // Validate file type
+      if (!file.type.startsWith("image/")) continue;
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) continue;
+
+      newPhotos.push({
+        id: crypto.randomUUID(),
+        file,
+        preview: URL.createObjectURL(file),
+      });
+    }
+
+    setPendingPhotos([...pendingPhotos, ...newPhotos]);
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removePendingPhoto = (id: string) => {
+    const photo = pendingPhotos.find((p) => p.id === id);
+    if (photo) {
+      URL.revokeObjectURL(photo.preview);
+    }
+    setPendingPhotos(pendingPhotos.filter((p) => p.id !== id));
+  };
+
+  const uploadPhotosForJob = async (jobId: string) => {
+    if (pendingPhotos.length === 0) return;
+
+    setUploadingPhotos(true);
+    try {
+      for (const photo of pendingPhotos) {
+        const formData = new FormData();
+        formData.append("file", photo.file);
+
+        await fetch(`/api/jobs/${jobId}/photos`, {
+          method: "POST",
+          body: formData,
+        });
+      }
+    } catch (error) {
+      console.error("Error uploading photos:", error);
+    } finally {
+      setUploadingPhotos(false);
+      // Cleanup preview URLs
+      pendingPhotos.forEach((p) => URL.revokeObjectURL(p.preview));
+    }
+  };
+
   const setQuickDate = (days: number) => {
     const date = new Date();
     date.setDate(date.getDate() + days);
@@ -193,6 +256,10 @@ export default function NewTicketPage() {
 
       if (res.ok) {
         const job = await res.json();
+        // Upload photos after job is created
+        if (pendingPhotos.length > 0) {
+          await uploadPhotosForJob(job.id);
+        }
         router.push(`/jobs/${job.id}`);
       } else {
         const error = await res.json();
@@ -497,21 +564,56 @@ export default function NewTicketPage() {
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Photo Upload</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
                 <button
                   type="button"
-                  onClick={() => setShowPhotoModal(true)}
-                  className="w-full border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 hover:bg-slate-50 transition-colors"
                 >
-                  <Camera className="h-10 w-10 text-slate-400 mx-auto mb-3" />
-                  <p className="text-slate-600 font-medium">Add Photo</p>
+                  <Upload className="h-10 w-10 text-slate-400 mx-auto mb-3" />
+                  <p className="text-slate-600 font-medium">Add Photos</p>
                   <p className="text-sm text-slate-400 mt-1">
-                    Tap to upload photos
+                    Click to select images (max 10MB each)
                   </p>
                 </button>
-                <p className="text-xs text-slate-500 mt-2 text-center">
-                  Note: Photo upload not yet implemented for demo
-                </p>
+
+                {/* Pending Photos Preview */}
+                {pendingPhotos.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-slate-500">
+                      {pendingPhotos.length} photo{pendingPhotos.length !== 1 ? "s" : ""} selected
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {pendingPhotos.map((photo) => (
+                        <div
+                          key={photo.id}
+                          className="relative aspect-square bg-slate-100 rounded-lg overflow-hidden group"
+                        >
+                          <img
+                            src={photo.preview}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removePendingPhoto(photo.id)}
+                            className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -590,9 +692,16 @@ export default function NewTicketPage() {
             type="submit"
             size="lg"
                 className={cn(!isValid && "opacity-50")}
-            disabled={!isValid || loading}
+            disabled={!isValid || loading || uploadingPhotos}
           >
-                {loading ? "Creating..." : "Save Job"}
+                {loading || uploadingPhotos ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {uploadingPhotos ? "Uploading photos..." : "Creating..."}
+                  </>
+                ) : (
+                  "Save Job"
+                )}
           </Button>
             </div>
             <p className="text-xs text-slate-400 text-right">
@@ -602,36 +711,6 @@ export default function NewTicketPage() {
         </div>
       </form>
 
-      {/* Photo Upload Modal */}
-      {showPhotoModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-sm">
-            <CardHeader>
-              <CardTitle>Add Photo</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start" onClick={() => setShowPhotoModal(false)} disabled>
-                <Camera className="h-5 w-5 mr-3" />
-                Take Photo
-              </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => setShowPhotoModal(false)} disabled>
-                <FileText className="h-5 w-5 mr-3" />
-                Scan Document
-              </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => setShowPhotoModal(false)} disabled>
-                <ImageIcon className="h-5 w-5 mr-3" />
-                Choose from Library
-              </Button>
-              <p className="text-xs text-slate-500 text-center py-2">
-                Note: Photo features not yet implemented for demo
-              </p>
-              <Button variant="ghost" className="w-full" onClick={() => setShowPhotoModal(false)}>
-                Cancel
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
