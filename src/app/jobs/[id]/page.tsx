@@ -14,6 +14,7 @@ import {
   X,
   Trash2,
   Loader2,
+  Archive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -82,7 +83,7 @@ interface User {
   role: string;
 }
 
-const STATUSES = ["INTAKE", "IN_PROGRESS", "READY", "PICKED_UP"];
+const STATUSES = ["INTAKE", "IN_PROGRESS", "READY", "PICKED_UP", "ARCHIVED"];
 
 export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -153,6 +154,11 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
   const handleMarkPickedUp = async () => {
     await updateJob({ status: "PICKED_UP" });
+  };
+
+  const handleArchive = async () => {
+    await updateJob({ status: "ARCHIVED" });
+    router.push("/jobs");
   };
 
   const handleSendSms = async () => {
@@ -468,6 +474,17 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 >
                   <CheckCircle className="h-5 w-5 mr-2" />
                   Mark Picked Up
+                </Button>
+              )}
+              {job.status === "PICKED_UP" && (
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={handleArchive}
+                  disabled={updating}
+                >
+                  <Archive className="h-5 w-5 mr-2" />
+                  Archive Ticket
                 </Button>
               )}
             </div>

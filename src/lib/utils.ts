@@ -33,7 +33,7 @@ export function formatDateTime(date: Date | string): string {
 }
 
 export function isOverdue(promisedAt: Date | string, status: string): boolean {
-  if (status === "READY" || status === "PICKED_UP") return false;
+  if (status === "READY" || status === "PICKED_UP" || status === "ARCHIVED") return false;
   return new Date(promisedAt) < new Date();
 }
 
@@ -59,6 +59,8 @@ export function getStatusColor(status: string): string {
       return "bg-green-100 text-green-800 border-green-200";
     case "PICKED_UP":
       return "bg-gray-100 text-gray-800 border-gray-200";
+    case "ARCHIVED":
+      return "bg-slate-100 text-slate-600 border-slate-200";
     default:
       return "bg-gray-100 text-gray-800 border-gray-200";
   }
@@ -76,6 +78,8 @@ export function getStatusLabel(status: string): string {
       return "Ready";
     case "PICKED_UP":
       return "Picked Up";
+    case "ARCHIVED":
+      return "Archived";
     default:
       return status;
   }

@@ -20,6 +20,9 @@ export async function GET(request: Request) {
 
     if (status) {
       where.status = status;
+    } else {
+      // By default, exclude archived jobs from the main board
+      where.status = { not: "ARCHIVED" };
     }
 
     if (assigneeId) {

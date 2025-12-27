@@ -8,7 +8,7 @@ import {
   AlertTriangle,
   Calendar,
   User,
-  Clock,
+  Archive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,7 @@ interface Job {
   itemType: string;
   issue: string;
   promisedAt: string;
+  updatedAt: string;
   depositCents: number;
   customer: {
     id: string;
@@ -52,6 +53,24 @@ const STATUSES = [
   { key: "READY", label: "Ready" },
   { key: "PICKED_UP", label: "Picked Up" },
 ];
+
+// Helper to check if a date is within the current week (Sunday to Saturday)
+function isWithinCurrentWeek(dateString: string): boolean {
+  const date = new Date(dateString);
+  const now = new Date();
+  
+  // Get start of current week (Sunday)
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  // Get end of current week (Saturday)
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+  
+  return date >= startOfWeek && date <= endOfWeek;
+}
 
 export default function JobsPage() {
   const searchParams = useSearchParams();
@@ -85,11 +104,20 @@ export default function JobsPage() {
   }, [fetchJobs]);
 
   const getJobsByStatus = (status: string) => {
-    return jobs.filter((job) => job.status === status);
+    let filtered = jobs.filter((job) => job.status === status);
+    
+    // For Picked Up, only show jobs from current week
+    if (status === "PICKED_UP") {
+      filtered = filtered.filter((job) => isWithinCurrentWeek(job.updatedAt || job.promisedAt));
+    }
+    
+    return filtered;
   };
 
   const overdueJobs = jobs.filter((job) => isOverdue(job.promisedAt, job.status));
   const todayJobs = jobs.filter((job) => isPromisedToday(job.promisedAt));
+
+  const archivedCount = jobs.filter((job) => job.status === "ARCHIVED").length;
 
   const filters = [
     {
@@ -171,6 +199,14 @@ export default function JobsPage() {
                 </button>
               );
             })}
+            <Link href="/jobs/archived">
+              <button
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all border bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+              >
+                <Archive className="h-4 w-4 text-slate-500" />
+                Archived
+              </button>
+            </Link>
           </div>
         </div>
       </div>
