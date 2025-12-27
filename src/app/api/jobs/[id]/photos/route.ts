@@ -105,7 +105,7 @@ export async function POST(
     if (uploadError) {
       console.error("Supabase upload error:", uploadError);
       return NextResponse.json(
-        { error: "Failed to upload file" },
+        { error: `Failed to upload file: ${uploadError.message}` },
         { status: 500 }
       );
     }
@@ -137,8 +137,9 @@ export async function POST(
     return NextResponse.json(media, { status: 201 });
   } catch (error) {
     console.error("Error uploading photo:", error);
+    const errorMessage = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: errorMessage },
       { status: 500 }
     );
   }
