@@ -1,8 +1,26 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export async function POST() {
-  // Logout is now handled client-side by clearing sessionStorage
-  // This endpoint exists for compatibility but doesn't need to do anything
+  const cookieStore = await cookies();
+  
+  // Clear auth cookies by setting them with maxAge: 0
+  cookieStore.set("auth-token", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+  
+  cookieStore.set("session-id", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+
   return NextResponse.json({ success: true });
 }
 

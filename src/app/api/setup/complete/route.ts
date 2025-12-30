@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       return newUser;
     });
 
-    // Create auth token - client will store in sessionStorage
+    // Create auth token and set cookie
     const token = createToken({
       id: user.id,
       name: user.name,
@@ -83,8 +83,17 @@ export async function POST(request: Request) {
       role: user.role,
     });
 
-    // Set setup-complete cookie (this one persists - just tracks if setup was done)
     const cookieStore = await cookies();
+    
+    // Set auth cookie
+    cookieStore.set("auth-token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+
+    // Set setup-complete cookie (persists - just tracks if setup was done)
     cookieStore.set("setup-complete", "true", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -92,17 +101,7 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 365,
     });
 
-    // Return token for client to store in sessionStorage
-    return NextResponse.json({ 
-      success: true, 
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      }
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Setup error:", error);
     

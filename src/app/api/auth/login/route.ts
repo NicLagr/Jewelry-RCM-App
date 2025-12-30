@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { verifyPassword, createToken } from "@/lib/auth";
 
@@ -39,7 +40,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create JWT token - this will be stored in sessionStorage by the client
     const token = createToken({
       id: user.id,
       name: user.name,
@@ -47,8 +47,15 @@ export async function POST(request: Request) {
       role: user.role,
     });
 
-    // Return token to client - they store it in sessionStorage
-    // sessionStorage clears on page refresh, achieving logout-on-refresh
+    // Set auth cookie
+    const cookieStore = await cookies();
+    cookieStore.set("auth-token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+
     return NextResponse.json({
       user: {
         id: user.id,
@@ -56,7 +63,6 @@ export async function POST(request: Request) {
         email: user.email,
         role: user.role,
       },
-      token, // Client stores this in sessionStorage
     });
   } catch (error) {
     console.error("Login error:", error);

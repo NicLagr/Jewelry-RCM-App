@@ -17,40 +17,25 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-interface User {
-  name: string;
-  role: string;
+interface NavProps {
+  user: {
+    name: string;
+    role: string;
+  } | null;
 }
 
-export function Nav() {
+export function Nav({ user }: NavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [storeName, setStoreName] = useState("Jewelry CRM");
-  const [user, setUser] = useState<User | null>(null);
 
-  // Get user from sessionStorage and fetch store name
+  // Fetch store name from settings
   useEffect(() => {
-    // Get user from sessionStorage
-    const storedUser = sessionStorage.getItem("user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        // Invalid JSON, ignore
-      }
-    }
-
-    // Fetch store name from settings
     const fetchStoreName = async () => {
       try {
-        const authToken = sessionStorage.getItem("authToken");
-        if (!authToken) return;
-
-        const res = await fetch("/api/settings", {
-          headers: { Authorization: `Bearer ${authToken}` },
-        });
+        const res = await fetch("/api/settings");
         if (res.ok) {
           const settings = await res.json();
           if (settings?.storeName) {
@@ -62,8 +47,10 @@ export function Nav() {
       }
     };
     
-    fetchStoreName();
-  }, []);
+    if (user) {
+      fetchStoreName();
+    }
+  }, [user]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,11 +59,10 @@ export function Nav() {
     }
   };
 
-  const handleLogout = () => {
-    // Clear sessionStorage to log out
-    sessionStorage.removeItem("authToken");
-    sessionStorage.removeItem("user");
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
+    router.refresh();
   };
 
   const navItems = [

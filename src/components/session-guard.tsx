@@ -9,27 +9,30 @@ export function SessionGuard() {
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    // Skip validation on public routes
+    // Skip on public routes
     if (pathname === "/login" || pathname === "/setup") {
       setChecked(true);
       return;
     }
 
-    // Check sessionStorage immediately on mount
-    // sessionStorage is cleared on page refresh - this is the key to logout-on-refresh
-    const authToken = sessionStorage.getItem("authToken");
+    // Detect page reload using Navigation Timing API
+    const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+    const nav = navEntries[0];
 
-    // If no auth token in sessionStorage, user needs to log in
-    if (!authToken) {
-      router.replace("/login");
+    if (nav?.type === "reload") {
+      // Page was reloaded - force logout
+      fetch("/api/auth/logout", { method: "POST" }).finally(() => {
+        router.replace("/login");
+      });
       return;
     }
 
-    // Auth token exists, mark as checked
+    // Not a reload - check if we have valid auth cookie
+    // The middleware will handle redirecting if no cookie exists
     setChecked(true);
   }, [pathname, router]);
 
-  // Show loading spinner while checking - prevents flash of content
+  // Show loading spinner while checking
   if (!checked && pathname !== "/login" && pathname !== "/setup") {
     return (
       <div className="fixed inset-0 bg-white z-[9999] flex items-center justify-center">

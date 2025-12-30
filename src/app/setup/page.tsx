@@ -80,11 +80,6 @@ export default function SetupPage() {
       const data = await res.json();
       
       if (res.ok) {
-        // Store auth token in sessionStorage (clears on page refresh)
-        if (data.token) {
-          sessionStorage.setItem("authToken", data.token);
-          sessionStorage.setItem("user", JSON.stringify(data.user));
-        }
         router.push("/jobs");
       } else {
         setError(data.error || "Setup failed");

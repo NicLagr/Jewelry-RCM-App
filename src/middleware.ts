@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const token = request.cookies.get("auth-token")?.value;
 
   // Setup routes - always accessible
   const setupRoutes = ["/setup", "/api/setup"];
@@ -12,49 +13,65 @@ export async function middleware(request: NextRequest) {
   const publicRoutes = ["/login", "/api/auth"];
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
-  // Check if setup is needed (no users in database)
-  // We use a cookie to cache this check to avoid hitting the DB on every request
+  // API routes
+  const isApiRoute = pathname.startsWith("/api");
+
+  // Check if setup is needed
   const setupComplete = request.cookies.get("setup-complete")?.value;
 
   if (!setupComplete && !isSetupRoute && !isPublicRoute) {
-    // Check if setup is needed by calling our API
     try {
       const checkUrl = new URL("/api/setup/check", request.url);
       const checkRes = await fetch(checkUrl.toString());
       const checkData = await checkRes.json();
 
       if (checkData.setupNeeded) {
-        // Redirect to setup page
-        if (pathname.startsWith("/api")) {
+        if (isApiRoute) {
           return NextResponse.json({ error: "Setup required" }, { status: 503 });
         }
         return NextResponse.redirect(new URL("/setup", request.url));
       } else {
-        // Setup is complete, set a cookie to avoid checking again
         const response = NextResponse.next();
         response.cookies.set("setup-complete", "true", {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "lax",
-          maxAge: 60 * 60 * 24 * 365, // 1 year
+          maxAge: 60 * 60 * 24 * 365,
         });
+        
+        // Check auth after setup check
+        if (!token && !isPublicRoute) {
+          if (isApiRoute) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+          }
+          return NextResponse.redirect(new URL("/login", request.url));
+        }
+        
         return response;
       }
     } catch (error) {
-      // If check fails, continue normally
       console.error("Setup check failed:", error);
     }
   }
 
   // If on setup page but setup is complete, redirect to login
-  if (isSetupRoute && setupComplete) {
-    if (pathname === "/setup") {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
+  if (isSetupRoute && setupComplete && pathname === "/setup") {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Let all requests through - auth is handled client-side via SessionGuard
-  // This allows the page to load, then SessionGuard checks sessionStorage
+  // Auth check for protected routes
+  if (!token && !isPublicRoute && !isSetupRoute) {
+    if (isApiRoute) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // Redirect logged-in users away from login page
+  if (token && pathname === "/login") {
+    return NextResponse.redirect(new URL("/jobs", request.url));
+  }
+
   return NextResponse.next();
 }
 
