@@ -83,8 +83,19 @@ export async function POST(request: Request) {
       role: user.role,
     });
 
+    // Generate a unique session ID for this login
+    const sessionId = crypto.randomUUID();
+
     const cookieStore = await cookies();
     cookieStore.set("auth-token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+
+    // Store session ID
+    cookieStore.set("session-id", sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -99,7 +110,7 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 365,
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, sessionId });
   } catch (error) {
     console.error("Setup error:", error);
     

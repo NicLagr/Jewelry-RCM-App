@@ -35,6 +35,11 @@ export default function LoginPage() {
         return;
       }
 
+      // Store session ID in sessionStorage (clears on tab close/refresh)
+      if (data.sessionId) {
+        sessionStorage.setItem("sessionId", data.sessionId);
+      }
+
       router.push("/jobs");
       router.refresh();
     } catch {

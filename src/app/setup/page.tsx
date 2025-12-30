@@ -77,10 +77,15 @@ export default function SetupPage() {
         }),
       });
 
+      const data = await res.json();
+      
       if (res.ok) {
+        // Store session ID in sessionStorage
+        if (data.sessionId) {
+          sessionStorage.setItem("sessionId", data.sessionId);
+        }
         router.push("/jobs");
       } else {
-        const data = await res.json();
         setError(data.error || "Setup failed");
       }
     } catch (error) {
