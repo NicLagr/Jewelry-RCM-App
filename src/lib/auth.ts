@@ -56,6 +56,12 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   return user;
 }
 
+// Alias for API routes - same as getCurrentUser but ignores the request parameter
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function getAuthenticatedUser(_request?: Request): Promise<AuthUser | null> {
+  return getCurrentUser();
+}
+
 export function canManageUsers(role: string): boolean {
   return role === "OWNER" || role === "ADMIN" || role === "MANAGER";
 }
