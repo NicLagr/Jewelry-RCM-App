@@ -277,13 +277,13 @@ export default function StoreSettingsPage() {
                     onChange={(e) =>
                       setSettings(settings ? { ...settings, smsFromNumber: e.target.value } : null)
                     }
-                    placeholder="123-456-7890"
+                    placeholder="+1 (555) 123-4567"
                     className="mt-1"
                   />
+                  <p className="text-xs text-slate-500 mt-1">
+                    This is your Twilio phone number. The actual sending number is configured via TWILIO_PHONE_NUMBER environment variable.
+                  </p>
                 </div>
-                <p className="text-xs text-slate-500">
-                  Note: SMS integration not yet implemented for demo. Settings are saved but messages will not be sent.
-                </p>
               </>
             )}
           </CardContent>

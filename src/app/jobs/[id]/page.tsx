@@ -83,6 +83,11 @@ interface User {
   role: string;
 }
 
+interface StoreSettings {
+  storeName: string;
+  smsEnabled: boolean;
+}
+
 const STATUSES = ["INTAKE", "IN_PROGRESS", "READY", "PICKED_UP", "ARCHIVED"];
 
 export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -97,6 +102,9 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [sendingSms, setSendingSms] = useState(false);
+  const [smsError, setSmsError] = useState<string | null>(null);
+  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchJob = useCallback(async () => {
@@ -125,9 +133,21 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     }
   };
 
+  const fetchStoreSettings = async () => {
+    try {
+      const res = await fetch("/api/settings");
+      if (res.ok) {
+        setStoreSettings(await res.json());
+      }
+    } catch (error) {
+      console.error("Error fetching store settings:", error);
+    }
+  };
+
   useEffect(() => {
     fetchJob();
     fetchUsers();
+    fetchStoreSettings();
   }, [fetchJob]);
 
   const updateJob = async (updates: Partial<Job>) => {
@@ -164,6 +184,9 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const handleSendSms = async () => {
     if (!job || !job.customer.phone || !smsMessage) return;
 
+    setSendingSms(true);
+    setSmsError(null);
+
     try {
       const res = await fetch("/api/sms/send", {
         method: "POST",
@@ -175,14 +198,35 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
         setShowSmsModal(false);
         setSmsMessage("");
         fetchJob();
+      } else {
+        setSmsError(data.error || "Failed to send SMS");
       }
     } catch (error) {
       console.error("Error sending SMS:", error);
+      setSmsError("An unexpected error occurred");
+    } finally {
+      setSendingSms(false);
     }
+  };
+
+  const getDefaultSmsMessage = () => {
+    if (!job || !storeSettings) return "";
+    return `Hi ${job.customer.firstName}, your ${job.itemType} repair is ready for pickup at ${storeSettings.storeName}. Thank you!`;
+  };
+
+  const handleOpenSmsModal = () => {
+    setSmsError(null);
+    // Pre-fill with default message if empty
+    if (!smsMessage) {
+      setSmsMessage(getDefaultSmsMessage());
+    }
+    setShowSmsModal(true);
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -449,7 +493,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               <Button
                 variant="outline"
                       className="w-full"
-                onClick={() => setShowSmsModal(true)}
+                onClick={handleOpenSmsModal}
                 disabled={!job.customer.phone}
               >
                 <MessageSquare className="h-5 w-5 mr-2" />
@@ -691,8 +735,14 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   value={smsMessage}
                   onChange={(e) => setSmsMessage(e.target.value)}
                   rows={4}
+                  disabled={sendingSms}
                 />
               </div>
+              {smsError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{smsError}</p>
+                </div>
+              )}
               <div className="flex gap-3">
                 <Button
                   variant="outline"
@@ -700,21 +750,27 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   onClick={() => {
                     setShowSmsModal(false);
                     setSmsMessage("");
+                    setSmsError(null);
                   }}
+                  disabled={sendingSms}
                 >
                   Cancel
                 </Button>
                 <Button
                   className="flex-1"
                   onClick={handleSendSms}
-                  disabled={!smsMessage.trim()}
+                  disabled={!smsMessage.trim() || sendingSms}
                 >
-                  Send
+                  {sendingSms ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send"
+                  )}
                 </Button>
               </div>
-              <p className="text-xs text-slate-500 text-center">
-                Note: SMS sending not yet implemented for demo
-              </p>
             </CardContent>
           </Card>
         </div>
