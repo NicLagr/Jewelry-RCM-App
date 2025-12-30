@@ -47,6 +47,9 @@ export default function StoreSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [newService, setNewService] = useState({ name: "", price: "" });
+  const [editingService, setEditingService] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<{ name: string; price: string }>({ name: "", price: "" });
+  const [showAddService, setShowAddService] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -107,16 +110,35 @@ export default function StoreSettingsPage() {
     }
   };
 
-  const handleUpdateService = async (service: ServiceCatalog) => {
+  const handleUpdateService = async (serviceId: string) => {
     try {
       await fetch("/api/services", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(service),
+        body: JSON.stringify({
+          id: serviceId,
+          name: editValues.name,
+          defaultUnitPriceCents: Math.round(parseFloat(editValues.price || "0") * 100),
+        }),
       });
+      setEditingService(null);
+      fetchData();
     } catch (error) {
       console.error("Error updating service:", error);
     }
+  };
+
+  const startEditing = (service: ServiceCatalog) => {
+    setEditingService(service.id);
+    setEditValues({
+      name: service.name,
+      price: (service.defaultUnitPriceCents / 100).toFixed(2),
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingService(null);
+    setEditValues({ name: "", price: "" });
   };
 
   if (loading) {
@@ -295,33 +317,107 @@ export default function StoreSettingsPage() {
             <CardTitle className="text-lg">Default Service Prices</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-              {services.map((service) => (
-                <div
-                  key={service.id}
+            {services.map((service) => (
+              <div
+                key={service.id}
                 className="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0"
-                >
-                <span className="flex-1 text-slate-900">{service.name}</span>
-                <span className="font-medium text-slate-900">
-                  ${(service.defaultUnitPriceCents / 100).toFixed(2)}
-                </span>
-                  <Button
-                    variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  >
-                  <Edit2 className="h-4 w-4 text-slate-400" />
-                  </Button>
-                </div>
-              ))}
+              >
+                {editingService === service.id ? (
+                  <>
+                    <Input
+                      value={editValues.name}
+                      onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
+                      className="flex-1"
+                      placeholder="Service name"
+                    />
+                    <div className="relative w-24">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                      <Input
+                        value={editValues.price}
+                        onChange={(e) => setEditValues({ ...editValues, price: e.target.value.replace(/[^0-9.]/g, "") })}
+                        className="pl-5 text-right"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => handleUpdateService(service.id)}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={cancelEditing}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <span className="flex-1 text-slate-900">{service.name}</span>
+                    <span className="font-medium text-slate-900">
+                      ${(service.defaultUnitPriceCents / 100).toFixed(2)}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => startEditing(service)}
+                    >
+                      <Edit2 className="h-4 w-4 text-slate-400" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            ))}
 
-            <Button
-              variant="outline"
-              onClick={handleAddService}
-              className="w-full mt-4"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add New Service
+            {/* Add New Service Form */}
+            {showAddService ? (
+              <div className="flex items-center gap-3 py-2 border-t border-slate-200 mt-4 pt-4">
+                <Input
+                  value={newService.name}
+                  onChange={(e) => setNewService({ ...newService, name: e.target.value })}
+                  className="flex-1"
+                  placeholder="Service name"
+                />
+                <div className="relative w-24">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                  <Input
+                    value={newService.price}
+                    onChange={(e) => setNewService({ ...newService, price: e.target.value.replace(/[^0-9.]/g, "") })}
+                    className="pl-5 text-right"
+                    placeholder="0.00"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleAddService}
+                  disabled={!newService.name}
+                >
+                  Add
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowAddService(false);
+                    setNewService({ name: "", price: "" });
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setShowAddService(true)}
+                className="w-full mt-4"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add New Service
               </Button>
+            )}
           </CardContent>
         </Card>
 
