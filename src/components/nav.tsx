@@ -17,40 +17,53 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-interface NavProps {
-  user: {
-    name: string;
-    role: string;
-  } | null;
+interface User {
+  name: string;
+  role: string;
 }
 
-export function Nav({ user }: NavProps) {
+export function Nav() {
   const pathname = usePathname();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [storeName, setStoreName] = useState("Jewelry CRM");
+  const [user, setUser] = useState<User | null>(null);
 
-  // Fetch store name from settings
+  // Get user from sessionStorage and fetch store name
   useEffect(() => {
+    // Get user from sessionStorage
+    const storedUser = sessionStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {
+        // Invalid JSON, ignore
+      }
+    }
+
+    // Fetch store name from settings
     const fetchStoreName = async () => {
       try {
-        const res = await fetch("/api/settings");
+        const authToken = sessionStorage.getItem("authToken");
+        if (!authToken) return;
+
+        const res = await fetch("/api/settings", {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
         if (res.ok) {
           const settings = await res.json();
           if (settings?.storeName) {
             setStoreName(settings.storeName);
           }
         }
-      } catch (error) {
+      } catch {
         // Keep default store name on error
       }
     };
     
-    if (user) {
-      fetchStoreName();
-    }
-  }, [user]);
+    fetchStoreName();
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,10 +72,11 @@ export function Nav({ user }: NavProps) {
     }
   };
 
-  const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+  const handleLogout = () => {
+    // Clear sessionStorage to log out
+    sessionStorage.removeItem("authToken");
+    sessionStorage.removeItem("user");
     router.push("/login");
-    router.refresh();
   };
 
   const navItems = [

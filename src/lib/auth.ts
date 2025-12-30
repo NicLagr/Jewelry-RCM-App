@@ -1,6 +1,5 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { cookies } from "next/headers";
 import prisma from "./prisma";
 
 const JWT_SECRET = process.env.JWT_SECRET || "jewelry-crm-secret-key";
@@ -39,21 +38,44 @@ export function verifyToken(token: string): AuthUser | null {
   }
 }
 
+// Get user from Authorization header (Bearer token)
+export function getUserFromRequest(request: Request): AuthUser | null {
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token = authHeader.slice(7); // Remove "Bearer " prefix
+  return verifyToken(token);
+}
+
+// Get current user - returns null since we don't use cookies anymore
+// This is kept for layout compatibility but won't return a user
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth-token")?.value;
+  // With sessionStorage-based auth, we can't get the user server-side
+  // The client handles auth state via SessionGuard
+  return null;
+}
 
-  if (!token) return null;
+// Verify request has valid auth and return user, or null if not authenticated
+export async function getAuthenticatedUser(request: Request): Promise<AuthUser | null> {
+  const user = getUserFromRequest(request);
+  if (!user) return null;
 
-  const decoded = verifyToken(token);
-  if (!decoded) return null;
-
-  const user = await prisma.user.findUnique({
-    where: { id: decoded.id },
-    select: { id: true, name: true, email: true, role: true },
+  // Verify user still exists and is active
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { id: true, name: true, email: true, role: true, active: true },
   });
 
-  return user;
+  if (!dbUser || !dbUser.active) return null;
+
+  return {
+    id: dbUser.id,
+    name: dbUser.name,
+    email: dbUser.email,
+    role: dbUser.role,
+  };
 }
 
 export function canManageUsers(role: string): boolean {

@@ -85,7 +85,10 @@ export default function JobsPage() {
       if (searchQuery) params.set("search", searchQuery);
       if (activeFilter) params.set("filter", activeFilter);
 
-      const res = await fetch(`/api/jobs?${params.toString()}`);
+      const authToken = sessionStorage.getItem("authToken");
+      const res = await fetch(`/api/jobs?${params.toString()}`, {
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+      });
       if (res.ok) {
         const data = await res.json();
         setJobs(data);

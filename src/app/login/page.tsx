@@ -35,9 +35,11 @@ export default function LoginPage() {
         return;
       }
 
-      // Store session ID in sessionStorage (clears on tab close/refresh)
-      if (data.sessionId) {
-        sessionStorage.setItem("sessionId", data.sessionId);
+      // Store auth token in sessionStorage (clears on page refresh)
+      // This is the key to logout-on-refresh behavior
+      if (data.token) {
+        sessionStorage.setItem("authToken", data.token);
+        sessionStorage.setItem("user", JSON.stringify(data.user));
       }
 
       router.push("/jobs");

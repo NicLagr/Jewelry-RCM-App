@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { supabase, STORAGE_BUCKET } from "@/lib/supabase";
 
 // DELETE /api/jobs/[id]/photos/[photoId] - Delete a photo
@@ -9,7 +9,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

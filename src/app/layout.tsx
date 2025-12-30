@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Nav } from "@/components/nav";
 import { SessionGuard } from "@/components/session-guard";
-import { getCurrentUser } from "@/lib/auth";
+import { AuthProvider } from "@/components/auth-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,21 +20,21 @@ export const metadata: Metadata = {
   description: "Manage your jewelry repair jobs and customers",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await getCurrentUser();
-
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionGuard />
-        <Nav user={user} />
-        <main>{children}</main>
+        <AuthProvider>
+          <SessionGuard />
+          <Nav />
+          <main>{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );

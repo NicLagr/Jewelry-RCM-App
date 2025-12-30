@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { getAuthenticatedUser } from "@/lib/auth";
 import twilio from "twilio";
 
 // Format phone number to E.164 format for Twilio
@@ -24,7 +24,7 @@ function formatPhoneToE164(phone: string): string {
 
 export async function POST(request: Request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

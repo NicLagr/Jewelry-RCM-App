@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
   const { pathname } = request.nextUrl;
 
   // Setup routes - always accessible
@@ -10,17 +9,14 @@ export async function middleware(request: NextRequest) {
   const isSetupRoute = setupRoutes.some((route) => pathname.startsWith(route));
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/login", "/api/auth/login"];
+  const publicRoutes = ["/login", "/api/auth"];
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
-
-  // API routes that need auth check
-  const isApiRoute = pathname.startsWith("/api");
 
   // Check if setup is needed (no users in database)
   // We use a cookie to cache this check to avoid hitting the DB on every request
   const setupComplete = request.cookies.get("setup-complete")?.value;
 
-  if (!setupComplete && !isSetupRoute) {
+  if (!setupComplete && !isSetupRoute && !isPublicRoute) {
     // Check if setup is needed by calling our API
     try {
       const checkUrl = new URL("/api/setup/check", request.url);
@@ -29,7 +25,7 @@ export async function middleware(request: NextRequest) {
 
       if (checkData.setupNeeded) {
         // Redirect to setup page
-        if (isApiRoute) {
+        if (pathname.startsWith("/api")) {
           return NextResponse.json({ error: "Setup required" }, { status: 503 });
         }
         return NextResponse.redirect(new URL("/setup", request.url));
@@ -42,19 +38,6 @@ export async function middleware(request: NextRequest) {
           sameSite: "lax",
           maxAge: 60 * 60 * 24 * 365, // 1 year
         });
-        
-        // Continue with normal auth flow
-        if (!token && !isPublicRoute) {
-          if (isApiRoute) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-          }
-          return NextResponse.redirect(new URL("/login", request.url));
-        }
-
-        if (token && pathname === "/login") {
-          return NextResponse.redirect(new URL("/jobs", request.url));
-        }
-
         return response;
       }
     } catch (error) {
@@ -70,18 +53,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Normal auth flow
-  if (!token && !isPublicRoute && !isSetupRoute) {
-    if (isApiRoute) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  if (token && pathname === "/login") {
-    return NextResponse.redirect(new URL("/jobs", request.url));
-  }
-
+  // Let all requests through - auth is handled client-side via SessionGuard
+  // This allows the page to load, then SessionGuard checks sessionStorage
   return NextResponse.next();
 }
 
