@@ -54,6 +54,55 @@ interface User {
   role: string;
 }
 
+// Price input component that allows natural typing
+function PriceInput({ value, onChange }: { value: number; onChange: (cents: number) => void }) {
+  const [displayValue, setDisplayValue] = useState(value ? (value / 100).toString() : "");
+
+  // Update display when external value changes (e.g., selecting a service)
+  useEffect(() => {
+    if (value && !displayValue) {
+      setDisplayValue((value / 100).toString());
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Allow typing naturally - only filter out non-numeric chars except decimal
+    const input = e.target.value.replace(/[^0-9.]/g, "");
+    // Prevent multiple decimals
+    const parts = input.split(".");
+    const cleaned = parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : input;
+    setDisplayValue(cleaned);
+  };
+
+  const handleBlur = () => {
+    // Format and save on blur
+    const num = parseFloat(displayValue) || 0;
+    const cents = Math.round(num * 100);
+    onChange(cents);
+    // Format display to 2 decimal places if there's a value
+    if (cents > 0) {
+      setDisplayValue((cents / 100).toFixed(2));
+    } else {
+      setDisplayValue("");
+    }
+  };
+
+  return (
+    <div className="relative">
+      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+      <Input
+        type="text"
+        inputMode="decimal"
+        placeholder="0.00"
+        value={displayValue}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        className="w-24 text-right text-sm pl-5"
+      />
+    </div>
+  );
+}
+
 export default function NewTicketPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -489,21 +538,10 @@ export default function NewTicketPage() {
                     />
                             </td>
                             <td className="py-2 text-right">
-                              <div className="relative">
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="0.00"
-                      value={line.unitPriceCents ? (line.unitPriceCents / 100).toFixed(2) : ""}
-                                  onChange={(e) => {
-                                    const value = e.target.value.replace(/[^0-9.]/g, "");
-                                    const cents = Math.round(parseFloat(value) * 100) || 0;
-                                    updateServiceLine(line.id, { unitPriceCents: cents });
-                                  }}
-                                  className="w-24 text-right text-sm pl-5"
-                    />
-                              </div>
+                              <PriceInput
+                                value={line.unitPriceCents}
+                                onChange={(cents) => updateServiceLine(line.id, { unitPriceCents: cents })}
+                              />
                             </td>
                             <td className="py-2 text-right font-medium">
                               {formatCents(line.qty * line.unitPriceCents)}
