@@ -115,14 +115,6 @@ export default function LoginPage() {
             >
               {loading ? "Signing in..." : "Sign In"}
             </Button>
-
-            <div className="text-center text-sm text-slate-500 pt-2">
-              <p>Demo credentials:</p>
-              <p className="font-mono text-xs mt-1">admin@jewelry.com / admin123</p>
-              <p className="text-xs text-slate-500 mt-3">
-                Note: Account registration not yet implemented for demo
-              </p>
-            </div>
           </form>
         </CardContent>
       </Card>
