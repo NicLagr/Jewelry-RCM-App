@@ -47,12 +47,12 @@ export async function POST(request: Request) {
       role: user.role,
     });
 
-    // Set auth cookie
     const cookieStore = await cookies();
     cookieStore.set("auth-token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      // No maxAge = session cookie, expires when browser closes
       path: "/",
     });
 

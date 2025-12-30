@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Nav } from "@/components/nav";
-import { SessionGuard } from "@/components/session-guard";
 import { getCurrentUser } from "@/lib/auth";
 import "./globals.css";
 
@@ -32,7 +31,6 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionGuard />
         <Nav user={user} />
         <main>{children}</main>
       </body>

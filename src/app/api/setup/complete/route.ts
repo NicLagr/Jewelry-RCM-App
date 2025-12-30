@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       return newUser;
     });
 
-    // Create auth token and set cookie
+    // Auto-login: Create auth token and set cookie
     const token = createToken({
       id: user.id,
       name: user.name,
@@ -84,8 +84,6 @@ export async function POST(request: Request) {
     });
 
     const cookieStore = await cookies();
-    
-    // Set auth cookie
     cookieStore.set("auth-token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -93,7 +91,7 @@ export async function POST(request: Request) {
       path: "/",
     });
 
-    // Set setup-complete cookie (persists - just tracks if setup was done)
+    // Set setup-complete cookie
     cookieStore.set("setup-complete", "true", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -71,22 +71,6 @@ function isWithinCurrentMonth(dateString: string): boolean {
 }
 
 export default function JobsPage() {
-  return (
-    <Suspense fallback={<JobsLoading />}>
-      <JobsContent />
-    </Suspense>
-  );
-}
-
-function JobsLoading() {
-  return (
-    <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
-      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1a4d3e]" />
-    </div>
-  );
-}
-
-function JobsContent() {
   const searchParams = useSearchParams();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);

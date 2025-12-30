@@ -42,7 +42,7 @@ export function Nav({ user }: NavProps) {
             setStoreName(settings.storeName);
           }
         }
-      } catch {
+      } catch (error) {
         // Keep default store name on error
       }
     };

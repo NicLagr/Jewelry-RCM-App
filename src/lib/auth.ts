@@ -39,7 +39,6 @@ export function verifyToken(token: string): AuthUser | null {
   }
 }
 
-// Get current user from cookie
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth-token")?.value;
@@ -55,11 +54,6 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   });
 
   return user;
-}
-
-// Alias for API routes - gets user from cookie
-export async function getAuthenticatedUser(_request: Request): Promise<AuthUser | null> {
-  return getCurrentUser();
 }
 
 export function canManageUsers(role: string): boolean {

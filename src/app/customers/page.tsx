@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -36,22 +36,6 @@ interface Customer {
 }
 
 export default function CustomersPage() {
-  return (
-    <Suspense fallback={<CustomersLoading />}>
-      <CustomersContent />
-    </Suspense>
-  );
-}
-
-function CustomersLoading() {
-  return (
-    <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
-      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1a4d3e]" />
-    </div>
-  );
-}
-
-function CustomersContent() {
   const searchParams = useSearchParams();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const user = await getAuthenticatedUser(request);
     if (!user) {

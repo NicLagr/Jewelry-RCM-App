@@ -77,11 +77,10 @@ export default function SetupPage() {
         }),
       });
 
-      const data = await res.json();
-      
       if (res.ok) {
         router.push("/jobs");
       } else {
+        const data = await res.json();
         setError(data.error || "Setup failed");
       }
     } catch (error) {
