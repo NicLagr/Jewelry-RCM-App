@@ -489,14 +489,21 @@ export default function NewTicketPage() {
                     />
                             </td>
                             <td className="py-2 text-right">
+                              <div className="relative">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
                     <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={(line.unitPriceCents / 100).toFixed(2)}
-                                onChange={(e) => updateServiceLine(line.id, { unitPriceCents: Math.round(parseFloat(e.target.value) * 100) || 0 })}
-                                className="w-24 text-right text-sm"
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={line.unitPriceCents ? (line.unitPriceCents / 100).toFixed(2) : ""}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^0-9.]/g, "");
+                                    const cents = Math.round(parseFloat(value) * 100) || 0;
+                                    updateServiceLine(line.id, { unitPriceCents: cents });
+                                  }}
+                                  className="w-24 text-right text-sm pl-5"
                     />
+                              </div>
                             </td>
                             <td className="py-2 text-right font-medium">
                               {formatCents(line.qty * line.unitPriceCents)}
