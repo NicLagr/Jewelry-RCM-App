@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { createToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -42,7 +44,7 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
     // Create store settings and admin user in a transaction
-    await prisma.$transaction(async (tx) => {
+    const user = await prisma.$transaction(async (tx) => {
       // Create or update store settings
       await tx.storeSettings.upsert({
         where: { id: "default" },
@@ -60,7 +62,7 @@ export async function POST(request: Request) {
       });
 
       // Create admin user
-      await tx.user.create({
+      const newUser = await tx.user.create({
         data: {
           name: adminName,
           email: adminEmail,
@@ -69,6 +71,32 @@ export async function POST(request: Request) {
           active: true,
         },
       });
+
+      return newUser;
+    });
+
+    // Auto-login: Create auth token and set cookie
+    const token = createToken({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
+
+    const cookieStore = await cookies();
+    cookieStore.set("auth-token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+
+    // Set setup-complete cookie
+    cookieStore.set("setup-complete", "true", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365,
     });
 
     return NextResponse.json({ success: true });

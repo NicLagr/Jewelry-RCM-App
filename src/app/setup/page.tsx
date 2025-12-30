@@ -78,7 +78,7 @@ export default function SetupPage() {
       });
 
       if (res.ok) {
-        router.push("/login");
+        router.push("/jobs");
       } else {
         const data = await res.json();
         setError(data.error || "Setup failed");
