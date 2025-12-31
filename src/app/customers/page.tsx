@@ -367,11 +367,11 @@ export default function CustomersPage() {
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-2">
-                            <Link href={`/jobs/new?customerId=${customer.id}`}>
+                          <Link href={`/jobs/new?customerId=${customer.id}`}>
                               <Button size="sm" variant="gold">
-                                New Ticket
-                              </Button>
-                            </Link>
+                              New Ticket
+                            </Button>
+                          </Link>
                             <Button
                               size="sm"
                               variant="ghost"

@@ -136,14 +136,14 @@ export async function POST(request: Request) {
       }
       jobNumber = customJobNumber;
     } else {
-      // Generate unique job number
+    // Generate unique job number
       jobNumber = generateJobNumber();
-      let attempts = 0;
-      while (attempts < 10) {
-        const existing = await prisma.job.findUnique({ where: { jobNumber } });
-        if (!existing) break;
-        jobNumber = generateJobNumber();
-        attempts++;
+    let attempts = 0;
+    while (attempts < 10) {
+      const existing = await prisma.job.findUnique({ where: { jobNumber } });
+      if (!existing) break;
+      jobNumber = generateJobNumber();
+      attempts++;
       }
     }
 

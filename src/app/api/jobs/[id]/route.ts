@@ -76,6 +76,25 @@ export async function PATCH(
     // Track status change for activity
     const statusChanged = data.status && data.status !== existingJob.status;
     
+    // Track job number change for activity
+    const jobNumberChanged = data.jobNumber && data.jobNumber !== existingJob.jobNumber;
+    
+    // If changing job number, check it's not already in use
+    if (jobNumberChanged) {
+      const existingWithNumber = await prisma.job.findFirst({
+        where: {
+          jobNumber: data.jobNumber,
+          id: { not: id },
+        },
+      });
+      if (existingWithNumber) {
+        return NextResponse.json(
+          { error: `Job number ${data.jobNumber} is already in use` },
+          { status: 400 }
+        );
+      }
+    }
+    
     // Handle archivedAt for photo lifecycle management
     let archivedAtUpdate: { archivedAt: Date | null } | undefined;
     if (statusChanged) {
@@ -111,6 +130,18 @@ export async function PATCH(
           jobId: id,
           type: "STATUS_CHANGE",
           message: `Status changed from ${existingJob.status} to ${data.status} by ${user.name}`,
+          userId: user.id,
+        },
+      });
+    }
+    
+    // Create activity for job number change
+    if (jobNumberChanged) {
+      await prisma.jobActivity.create({
+        data: {
+          jobId: id,
+          type: "NOTE",
+          message: `Job number changed from #${existingJob.jobNumber} to #${data.jobNumber} by ${user.name}`,
           userId: user.id,
         },
       });

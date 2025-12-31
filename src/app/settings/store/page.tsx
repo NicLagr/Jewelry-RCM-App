@@ -317,9 +317,9 @@ export default function StoreSettingsPage() {
             <CardTitle className="text-lg">Default Service Prices</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {services.map((service) => (
-              <div
-                key={service.id}
+              {services.map((service) => (
+                <div
+                  key={service.id}
                 className="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0"
               >
                 {editingService === service.id ? (

@@ -115,9 +115,11 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [editingCustomer, setEditingCustomer] = useState(false);
   const [editingItem, setEditingItem] = useState(false);
   const [editingIssue, setEditingIssue] = useState(false);
+  const [editingJobNumber, setEditingJobNumber] = useState(false);
   const [customerEdits, setCustomerEdits] = useState({ firstName: "", lastName: "", phone: "", email: "" });
   const [itemEdits, setItemEdits] = useState({ itemType: "", itemMetal: "", itemStone: "", description: "" });
   const [issueEdit, setIssueEdit] = useState("");
+  const [jobNumberEdit, setJobNumberEdit] = useState("");
 
   const fetchJob = useCallback(async () => {
     try {
@@ -258,7 +260,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
   const getDefaultSmsMessage = () => {
     if (!job || !storeSettings) return "";
-    return `Hi ${job.customer.firstName}, your item is ready for pickup at ${storeSettings.storeName}. Thank you!`;
+    return `Hi ${job.customer.firstName}, your item is ready for pickup at ${storeSettings.storeName}. Please call us with any questions. This is an automated message - please do not reply to this number.`;
   };
 
   const handleOpenSmsModal = () => {
@@ -390,6 +392,23 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     setEditingIssue(false);
   };
 
+  const startEditingJobNumber = () => {
+    if (!job) return;
+    setJobNumberEdit(job.jobNumber.toString());
+    setEditingJobNumber(true);
+  };
+
+  const saveJobNumberEdit = async () => {
+    if (!job) return;
+    const newJobNumber = parseInt(jobNumberEdit);
+    if (isNaN(newJobNumber) || newJobNumber <= 0) {
+      alert("Please enter a valid job number");
+      return;
+    }
+    await updateJob({ jobNumber: newJobNumber } as Partial<Job>);
+    setEditingJobNumber(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
@@ -427,9 +446,38 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
               </Link>
+              {editingJobNumber ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-slate-900">Ticket #</span>
+                  <Input
+                    type="number"
+                    value={jobNumberEdit}
+                    onChange={(e) => setJobNumberEdit(e.target.value)}
+                    className="w-32 text-xl font-bold font-mono"
+                    autoFocus
+                  />
+                  <Button size="sm" onClick={saveJobNumberEdit} disabled={updating}>
+                    <Save className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingJobNumber(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 group">
                   <h1 className="text-2xl font-bold text-slate-900">
-                Ticket #{job.jobNumber} — Job Detail
+                    Ticket #{job.jobNumber} — Job Detail
                   </h1>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={startEditingJobNumber}
+                  >
+                    <Pencil className="h-4 w-4 text-slate-400" />
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
