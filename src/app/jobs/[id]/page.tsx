@@ -568,18 +568,18 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   </Button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 group">
+                <div className="flex items-center gap-2">
                   <h1 className="text-2xl font-bold text-slate-900">
                     Ticket #{job.jobNumber} — Job Detail
                   </h1>
-              <Button
+                  <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-8 w-8 p-0"
                     onClick={startEditingJobNumber}
-              >
+                  >
                     <Pencil className="h-4 w-4 text-slate-400" />
-              </Button>
+                  </Button>
                 </div>
               )}
             </div>
