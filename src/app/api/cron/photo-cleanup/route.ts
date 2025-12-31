@@ -47,12 +47,13 @@ function isAuthorizedCronRequest(request: Request): boolean {
   const authHeader = request.headers.get("authorization");
 
   // Check for Vercel cron secret
-  if (process.env.CRON_SECRET) {
-    return authHeader === `Bearer ${process.env.CRON_SECRET}`;
+  if (process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`) {
+    return true;
   }
 
-  // In development, allow requests without auth
-  if (process.env.NODE_ENV === "development") {
+  // Allow localhost requests for testing (development)
+  const host = request.headers.get("host") || "";
+  if (host.startsWith("localhost:") || host === "localhost") {
     return true;
   }
 
