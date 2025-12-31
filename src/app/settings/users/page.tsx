@@ -26,12 +26,20 @@ interface User {
 }
 
 const ROLES = [
-  { value: "OWNER", label: "Administrator", color: "bg-purple-100 text-purple-800" },
   { value: "ADMIN", label: "Administrator", color: "bg-purple-100 text-purple-800" },
   { value: "MANAGER", label: "Manager", color: "bg-blue-100 text-blue-800" },
   { value: "JEWELER", label: "Jeweler", color: "bg-amber-100 text-amber-800" },
   { value: "STAFF", label: "Staff", color: "bg-slate-100 text-slate-800" },
 ];
+
+// For display purposes, map OWNER to Administrator as well
+const ROLE_DISPLAY: Record<string, { label: string; color: string }> = {
+  OWNER: { label: "Owner", color: "bg-purple-100 text-purple-800" },
+  ADMIN: { label: "Administrator", color: "bg-purple-100 text-purple-800" },
+  MANAGER: { label: "Manager", color: "bg-blue-100 text-blue-800" },
+  JEWELER: { label: "Jeweler", color: "bg-amber-100 text-amber-800" },
+  STAFF: { label: "Staff", color: "bg-slate-100 text-slate-800" },
+};
 
 export default function UsersSettingsPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -99,7 +107,7 @@ export default function UsersSettingsPage() {
   };
 
   const getRoleInfo = (role: string) => {
-    return ROLES.find((r) => r.value === role) || ROLES[4];
+    return ROLE_DISPLAY[role] || ROLE_DISPLAY.STAFF;
   };
 
   const getStatusBadge = (user: User) => {
