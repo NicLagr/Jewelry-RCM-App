@@ -30,20 +30,32 @@ export async function DELETE(
 
     // Extract the storage path from the URL
     // URL format: https://xxx.supabase.co/storage/v1/object/public/job-photos/jobId/timestamp.ext
-    const url = new URL(media.url);
-    const pathParts = url.pathname.split(`/${STORAGE_BUCKET}/`);
-    const storagePath = pathParts[1];
+    try {
+      const url = new URL(media.url);
+      // The path after /object/public/job-photos/ is what we need
+      const match = url.pathname.match(/\/object\/public\/job-photos\/(.+)$/);
+      const storagePath = match ? match[1] : null;
 
-    if (storagePath) {
-      // Delete from Supabase Storage
-      const { error: deleteError } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .remove([storagePath]);
+      console.log("Deleting from storage:", { url: media.url, storagePath });
 
-      if (deleteError) {
-        console.error("Supabase delete error:", deleteError);
-        // Continue with database deletion even if storage delete fails
+      if (storagePath) {
+        // Delete from Supabase Storage
+        const { error: deleteError, data: deleteData } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .remove([storagePath]);
+
+        if (deleteError) {
+          console.error("Supabase delete error:", deleteError);
+          // Continue with database deletion even if storage delete fails
+        } else {
+          console.log("Storage delete successful:", deleteData);
+        }
+      } else {
+        console.warn("Could not extract storage path from URL:", media.url);
       }
+    } catch (urlError) {
+      console.error("Error parsing URL for storage deletion:", urlError);
+      // Continue with database deletion
     }
 
     // Delete the database record
