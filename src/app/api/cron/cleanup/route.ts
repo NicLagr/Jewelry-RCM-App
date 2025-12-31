@@ -76,12 +76,14 @@ export async function GET(request: Request) {
 
     // Find archived jobs older than retention period
     // Status "ARCHIVED" indicates completed/archived jobs
+    // Use archivedAt if available, fall back to updatedAt for legacy jobs
     const oldArchivedJobs = await prisma.job.findMany({
       where: {
         status: "ARCHIVED",
-        updatedAt: {
-          lt: cutoffDate,
-        },
+        OR: [
+          { archivedAt: { lt: cutoffDate } },
+          { archivedAt: null, updatedAt: { lt: cutoffDate } },
+        ],
       },
       include: {
         media: true,

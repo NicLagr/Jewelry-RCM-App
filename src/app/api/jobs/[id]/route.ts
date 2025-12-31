@@ -75,11 +75,24 @@ export async function PATCH(
 
     // Track status change for activity
     const statusChanged = data.status && data.status !== existingJob.status;
+    
+    // Handle archivedAt for photo lifecycle management
+    let archivedAtUpdate: { archivedAt: Date | null } | undefined;
+    if (statusChanged) {
+      if (data.status === "ARCHIVED" && existingJob.status !== "ARCHIVED") {
+        // Job is being archived - set archivedAt
+        archivedAtUpdate = { archivedAt: new Date() };
+      } else if (data.status !== "ARCHIVED" && existingJob.status === "ARCHIVED") {
+        // Job is being restored from archive - clear archivedAt
+        archivedAtUpdate = { archivedAt: null };
+      }
+    }
 
     const job = await prisma.job.update({
       where: { id },
       data: {
         ...data,
+        ...archivedAtUpdate,
         promisedAt: data.promisedAt ? new Date(data.promisedAt) : undefined,
       },
       include: {

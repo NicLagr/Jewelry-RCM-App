@@ -51,11 +51,14 @@ model Job {
   assigneeId   String?
   assignee     User?            @relation("AssignedJobs", fields: [assigneeId], references: [id])
   depositCents Int              @default(0)
+  archivedAt   DateTime?        // When job was archived (for photo lifecycle management)
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   services     JobServiceLine[]
   media        JobMedia[]
   activities   JobActivity[]
+
+  @@index([status, archivedAt])
 }
 
 model ServiceCatalog {
@@ -81,12 +84,17 @@ model JobServiceLine {
 }
 
 model JobMedia {
-  id        String   @id @default(cuid())
-  jobId     String
-  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  url       String
-  filename  String?
-  createdAt DateTime @default(now())
+  id           String    @id @default(cuid())
+  jobId        String
+  job          Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  url          String
+  filename     String?
+  sizeBytes    Int?      // File size in bytes (for tracking compression)
+  compressedAt DateTime? // When photo was aggressively compressed (lifecycle tier 2)
+  deletedAt    DateTime? // Soft delete marker (photo removed from storage)
+  createdAt    DateTime  @default(now())
+
+  @@index([compressedAt, deletedAt])
 }
 
 model JobActivity {

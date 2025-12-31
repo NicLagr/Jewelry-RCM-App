@@ -155,6 +155,7 @@ export async function POST(
         jobId: id,
         url: urlData.publicUrl,
         filename: file.name,
+        sizeBytes: uploadBuffer.length,
       },
     });
 
