@@ -89,7 +89,7 @@ function PriceInput({ value, onChange }: { value: number; onChange: (cents: numb
 
   return (
     <div className="relative">
-      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
       <Input
         type="text"
         inputMode="decimal"
@@ -97,7 +97,7 @@ function PriceInput({ value, onChange }: { value: number; onChange: (cents: numb
         value={displayValue}
         onChange={handleChange}
         onBlur={handleBlur}
-        className="w-24 text-right text-sm pl-5"
+        className="w-full text-right text-sm pl-7 pr-3"
       />
     </div>
   );
@@ -378,11 +378,11 @@ export default function NewTicketPage() {
         </Card>
 
         {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* Left Column - Customer Info & Services */}
           <div className="space-y-6">
             {/* Customer Info */}
-        <Card>
+            <Card className="min-h-[280px]">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Customer Info</CardTitle>
           </CardHeader>
@@ -513,133 +513,133 @@ export default function NewTicketPage() {
           </CardContent>
         </Card>
 
-        {/* Services */}
-        <Card>
+            {/* Services */}
+            <Card className="min-h-[200px]">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Services</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-                {/* Services Table */}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Services List */}
                 {serviceLines.length > 0 && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-200">
-                          <th className="text-left py-2 font-medium text-slate-500">Service Name</th>
-                          <th className="text-center py-2 font-medium text-slate-500 w-16">Qty</th>
-                          <th className="text-right py-2 font-medium text-slate-500 w-24">Unit Price</th>
-                          <th className="text-right py-2 font-medium text-slate-500 w-24">Total</th>
-                          <th className="w-10"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {serviceLines.map((line) => (
-                          <tr key={line.id} className="border-b border-slate-100">
-                            <td className="py-2">
-                    <Select
-                      value={line.serviceCatalogId || "custom"}
-                      onChange={(e) => handleServiceSelect(line.id, e.target.value)}
-                                className="text-sm"
-                    >
-                                <option value="custom">Select or type service...</option>
-                      {services.map((service) => (
-                        <option key={service.id} value={service.id}>
-                                    {service.name}
-                        </option>
-                      ))}
-                    </Select>
-                    {!line.serviceCatalogId && (
-                      <Input
-                                  placeholder="Custom service name"
-                        value={line.name}
-                                  onChange={(e) => updateServiceLine(line.id, { name: e.target.value })}
-                                  className="mt-1 text-sm"
-                      />
-                    )}
-                            </td>
-                            <td className="py-2 text-center">
-                    <Input
-                      type="number"
-                      min="1"
-                      value={line.qty}
-                                onChange={(e) => updateServiceLine(line.id, { qty: parseInt(e.target.value) || 1 })}
-                                className="w-16 text-center text-sm"
-                    />
-                            </td>
-                            <td className="py-2 text-right">
-                              <PriceInput
-                                value={line.unitPriceCents}
-                                onChange={(cents) => updateServiceLine(line.id, { unitPriceCents: cents })}
+                  <div className="space-y-4">
+                    {serviceLines.map((line, index) => (
+                      <div key={line.id} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <div className="flex items-start justify-between gap-3">
+                          {/* Service Name Section */}
+                          <div className="flex-1 min-w-0">
+                            <Label className="text-xs text-slate-500 mb-1 block">Service</Label>
+                            <Select
+                              value={line.serviceCatalogId || "custom"}
+                              onChange={(e) => handleServiceSelect(line.id, e.target.value)}
+                              className="w-full text-sm"
+                            >
+                              <option value="custom">Select or type service...</option>
+                              {services.map((service) => (
+                                <option key={service.id} value={service.id}>
+                                  {service.name}
+                                </option>
+                              ))}
+                            </Select>
+                            {!line.serviceCatalogId && (
+                              <Input
+                                placeholder="Custom service name"
+                                value={line.name}
+                                onChange={(e) => updateServiceLine(line.id, { name: e.target.value })}
+                                className="mt-2 text-sm"
                               />
-                            </td>
-                            <td className="py-2 text-right font-medium">
+                            )}
+                          </div>
+                          
+                          {/* Remove Button */}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeServiceLine(line.id)}
+                            className="h-8 w-8 p-0 shrink-0"
+                          >
+                            <X className="h-4 w-4 text-slate-400" />
+                          </Button>
+                        </div>
+                        
+                        {/* Qty, Price, Total Row */}
+                        <div className="grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-slate-200">
+                          <div>
+                            <Label className="text-xs text-slate-500 mb-1 block">Qty</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={line.qty}
+                              onChange={(e) => updateServiceLine(line.id, { qty: parseInt(e.target.value) || 1 })}
+                              className="w-full text-sm text-center"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-slate-500 mb-1 block">Unit Price</Label>
+                            <PriceInput
+                              value={line.unitPriceCents}
+                              onChange={(cents) => updateServiceLine(line.id, { unitPriceCents: cents })}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-slate-500 mb-1 block">Total</Label>
+                            <div className="h-10 flex items-center justify-end font-semibold text-slate-900">
                               {formatCents(line.qty * line.unitPriceCents)}
-                            </td>
-                            <td className="py-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                                size="sm"
-                  onClick={() => removeServiceLine(line.id)}
-                                className="h-8 w-8 p-0"
-                >
-                                <X className="h-4 w-4 text-slate-400" />
-                </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addServiceLine}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addServiceLine}
                   className="w-full"
-            >
+                >
                   <Plus className="h-4 w-4 mr-2" />
-              Add Service
-            </Button>
+                  Add Service
+                </Button>
 
-            {serviceLines.length > 0 && (
-                  <div className="flex justify-end pt-2 border-t border-slate-200">
-                <div className="text-right">
+                {serviceLines.length > 0 && (
+                  <div className="flex justify-end pt-4 border-t border-slate-200">
+                    <div className="text-right">
                       <span className="text-slate-500">Subtotal:</span>
-                      <span className="ml-3 text-lg font-bold text-slate-900">
-                    {formatCents(subtotal)}
-                  </span>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                      <span className="ml-3 text-xl font-bold text-slate-900">
+                        {formatCents(subtotal)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Right Column - Item Info & Photo Upload */}
           <div className="space-y-6">
             {/* Item Info */}
-            <Card>
+            <Card className="min-h-[280px]">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Item Info</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <div>
                   <Label className="text-slate-500 text-sm">Description</Label>
                   <Textarea
                     value={itemInfo.description}
                     onChange={(e) => setItemInfo({ ...itemInfo, description: e.target.value })}
-                    placeholder="e.g., Solitaire, loose prong"
-                    className="mt-1"
-                    rows={3}
+                    placeholder="Describe the item and any issues (e.g., Gold solitaire ring, loose center prong)"
+                    className="mt-1 min-h-[140px]"
+                    rows={5}
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Photo Upload */}
-        <Card>
+            <Card className="min-h-[200px]">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Photo Upload</CardTitle>
               </CardHeader>
@@ -655,9 +655,9 @@ export default function NewTicketPage() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 hover:bg-slate-50 transition-colors"
+                  className="w-full border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-slate-400 hover:bg-slate-50 transition-colors"
                 >
-                  <Upload className="h-10 w-10 text-slate-400 mx-auto mb-3" />
+                  <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
                   <p className="text-slate-600 font-medium">Add Photos</p>
                   <p className="text-sm text-slate-400 mt-1">
                     Click to select images (max 10MB each)
@@ -666,11 +666,11 @@ export default function NewTicketPage() {
 
                 {/* Pending Photos Preview */}
                 {pendingPhotos.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-sm text-slate-500">
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-slate-600">
                       {pendingPhotos.length} photo{pendingPhotos.length !== 1 ? "s" : ""} selected
                     </p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                       {pendingPhotos.map((photo) => (
                         <div
                           key={photo.id}
