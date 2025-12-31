@@ -135,6 +135,7 @@ export default function NewTicketPage() {
   const [promisedTime, setPromisedTime] = useState("");
   const [customJobNumber, setCustomJobNumber] = useState("");
   const [depositCents, setDepositCents] = useState(0);
+  const [showDeposit, setShowDeposit] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -612,25 +613,49 @@ export default function NewTicketPage() {
                   <div className="pt-4 border-t border-slate-200 space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500">Subtotal:</span>
-                      <span className="text-lg font-semibold text-slate-900">
+                      <span className="text-xl font-bold text-slate-900">
                         {formatCents(subtotal)}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-500">Deposit:</span>
-                      <div className="w-32">
-                        <PriceInput
-                          value={depositCents}
-                          onChange={(cents) => setDepositCents(cents)}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                      <span className="font-medium text-slate-700">Balance Due:</span>
-                      <span className="text-xl font-bold text-slate-900">
-                        {formatCents(subtotal - depositCents)}
-                      </span>
-                    </div>
+                    {showDeposit ? (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-500">Deposit:</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowDeposit(false);
+                                setDepositCents(0);
+                              }}
+                              className="text-xs text-slate-400 hover:text-slate-600"
+                            >
+                              (remove)
+                            </button>
+                          </div>
+                          <div className="w-32">
+                            <PriceInput
+                              value={depositCents}
+                              onChange={(cents) => setDepositCents(cents)}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                          <span className="font-medium text-slate-700">Balance Due:</span>
+                          <span className="text-xl font-bold text-slate-900">
+                            {formatCents(subtotal - depositCents)}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowDeposit(true)}
+                        className="text-sm text-[#1a4d3e] hover:text-[#2a5d4e] font-medium"
+                      >
+                        + Add Deposit
+                      </button>
+                    )}
                   </div>
                 )}
               </CardContent>
