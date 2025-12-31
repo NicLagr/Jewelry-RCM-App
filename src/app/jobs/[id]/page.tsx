@@ -485,52 +485,54 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Top Row - Tabs and Controls */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
           {/* Tabs */}
-          <Tabs defaultValue="overview" className="flex-1">
-            <TabsList className="bg-slate-100">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
-              <TabsTrigger value="media">Media</TabsTrigger>
-              <TabsTrigger value="billing">Billing</TabsTrigger>
-            </TabsList>
+          <Tabs defaultValue="overview" className="w-full">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <TabsList className="bg-slate-100">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
+                <TabsTrigger value="media">Media</TabsTrigger>
+                <TabsTrigger value="billing">Billing</TabsTrigger>
+              </TabsList>
 
-            {/* Right side controls */}
-            <div className="flex items-center gap-4 mt-4 lg:mt-0 lg:absolute lg:right-4 lg:top-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-500">Promised date</span>
-                <span className="font-medium">{formattedPromised}</span>
+              {/* Right side controls */}
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-500">Promised date</span>
+                  <span className="font-medium">{formattedPromised}</span>
                 </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-500">Assignee</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-500">Assignee</span>
+                  <Select
+                    value={job.assignee?.id || ""}
+                    onChange={(e) =>
+                      updateJob({ assigneeId: e.target.value || null } as Partial<Job>)
+                    }
+                    disabled={updating}
+                    className="w-36"
+                  >
+                    <option value="">Unassigned</option>
+                    {users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
                 <Select
-                  value={job.assignee?.id || ""}
-                  onChange={(e) =>
-                    updateJob({ assigneeId: e.target.value || null } as Partial<Job>)
-                  }
+                  value={job.status}
+                  onChange={(e) => updateJob({ status: e.target.value })}
                   disabled={updating}
-                  className="w-32"
+                  className="w-36"
                 >
-                  <option value="">Unassigned</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name}
+                  {STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {getStatusLabel(status)}
                     </option>
                   ))}
                 </Select>
               </div>
-              <Select
-                value={job.status}
-                onChange={(e) => updateJob({ status: e.target.value })}
-                disabled={updating}
-                className="w-32"
-              >
-                {STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {getStatusLabel(status)}
-                  </option>
-                ))}
-              </Select>
             </div>
 
             <TabsContent value="overview" className="mt-6">
