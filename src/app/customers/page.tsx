@@ -14,6 +14,7 @@ import {
   Mail,
   ChevronLeft,
   ChevronRight,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,8 @@ export default function CustomersPage() {
     email: "",
     vip: false,
   });
+  const [deletingCustomerId, setDeletingCustomerId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -100,6 +103,35 @@ export default function CustomersPage() {
     }
   };
 
+  const handleDeleteCustomer = async (customerId: string, customerName: string) => {
+    if (!confirm(`Are you sure you want to delete ${customerName}? This cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingCustomerId(customerId);
+    setDeleteError(null);
+
+    try {
+      const res = await fetch(`/api/customers/${customerId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        fetchCustomers();
+      } else {
+        const data = await res.json();
+        setDeleteError(data.error || "Failed to delete customer");
+        setTimeout(() => setDeleteError(null), 5000);
+      }
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+      setDeleteError("An error occurred while deleting");
+      setTimeout(() => setDeleteError(null), 5000);
+    } finally {
+      setDeletingCustomerId(null);
+    }
+  };
+
   // Calculate summary stats
   const totalCustomers = customers.length;
   const totalActiveJobs = customers.reduce((sum, c) => sum + c.activeJobs, 0);
@@ -123,6 +155,13 @@ export default function CustomersPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
+      {/* Delete Error Toast */}
+      {deleteError && (
+        <div className="fixed top-20 right-4 z-50 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg max-w-sm">
+          <p className="text-sm font-medium">{deleteError}</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -279,11 +318,26 @@ export default function CustomersPage() {
                           {formatCents(customer.lifetimeValueCents)}
                         </td>
                         <td className="py-4 px-4">
-                          <Link href={`/jobs/new?customerId=${customer.id}`}>
-                            <Button size="sm" variant="gold">
-                              New Ticket
+                          <div className="flex items-center gap-2">
+                            <Link href={`/jobs/new?customerId=${customer.id}`}>
+                              <Button size="sm" variant="gold">
+                                New Ticket
+                              </Button>
+                            </Link>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-red-600"
+                              onClick={() => handleDeleteCustomer(customer.id, `${customer.firstName} ${customer.lastName}`)}
+                              disabled={deletingCustomerId === customer.id}
+                            >
+                              {deletingCustomerId === customer.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-400" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
                             </Button>
-                          </Link>
+                          </div>
                         </td>
                       </tr>
                     ))}

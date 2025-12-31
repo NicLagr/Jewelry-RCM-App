@@ -192,6 +192,31 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     router.push("/jobs");
   };
 
+  const handleDeleteJob = async () => {
+    if (!job) return;
+    if (!confirm(`Are you sure you want to delete Ticket #${job.jobNumber}? This will permanently delete all associated data including photos and activity history. This cannot be undone.`)) {
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const res = await fetch(`/api/jobs/${job.id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        router.push("/jobs");
+      } else {
+        alert("Failed to delete job");
+      }
+    } catch (error) {
+      console.error("Error deleting job:", error);
+      alert("An error occurred while deleting");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const handleSendSms = async () => {
     if (!job || !job.customer.phone || !smsMessage) return;
 
@@ -721,6 +746,17 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   Archive Ticket
                 </Button>
               )}
+              
+              {/* Delete Button - always visible */}
+              <Button
+                className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                variant="ghost"
+                onClick={handleDeleteJob}
+                disabled={updating}
+              >
+                <Trash2 className="h-5 w-5 mr-2" />
+                Delete Ticket
+              </Button>
             </div>
           </div>
         </div>
