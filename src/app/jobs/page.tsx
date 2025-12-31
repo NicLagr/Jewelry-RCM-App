@@ -40,7 +40,7 @@ interface Job {
   status: string;
   itemType: string;
   issue: string;
-  promisedAt: string;
+  promisedAt: string | null;
   updatedAt: string;
   depositCents: number;
   customer: {
@@ -67,7 +67,8 @@ const STATUSES = [
 ];
 
 // Helper to check if a date is within the current month
-function isWithinCurrentMonth(dateString: string): boolean {
+function isWithinCurrentMonth(dateString: string | null): boolean {
+  if (!dateString) return true; // If no date, include it
   const date = new Date(dateString);
   const now = new Date();
   
@@ -511,8 +512,8 @@ function JobCardContent({
       {/* Item and Date */}
       <p className="text-sm text-slate-600 mb-1 ml-7">
         {job.itemType} • {isCompleted 
-          ? `Completed: ${formatDateShort(job.updatedAt)} (Promised: ${formatDateShort(job.promisedAt)})` 
-          : `Promised: ${formatDateShort(job.promisedAt)}`}
+          ? `Completed: ${formatDateShort(job.updatedAt)}${job.promisedAt ? ` (Promised: ${formatDateShort(job.promisedAt)})` : ''}` 
+          : job.promisedAt ? `Promised: ${formatDateShort(job.promisedAt)}` : 'No due date'}
       </p>
 
       {/* Issue */}
@@ -570,8 +571,8 @@ function JobCard({ job }: { job: Job }) {
         {/* Item and Date */}
         <p className="text-sm text-slate-600 mb-1">
           {job.itemType} • {isCompleted 
-            ? `Completed: ${formatDateShort(job.updatedAt)} (Promised: ${formatDateShort(job.promisedAt)})` 
-            : `Promised: ${formatDateShort(job.promisedAt)}`}
+            ? `Completed: ${formatDateShort(job.updatedAt)}${job.promisedAt ? ` (Promised: ${formatDateShort(job.promisedAt)})` : ''}` 
+            : job.promisedAt ? `Promised: ${formatDateShort(job.promisedAt)}` : 'No due date'}
         </p>
 
         {/* Issue */}

@@ -32,12 +32,14 @@ export function formatDateTime(date: Date | string): string {
   });
 }
 
-export function isOverdue(promisedAt: Date | string, status: string): boolean {
+export function isOverdue(promisedAt: Date | string | null, status: string): boolean {
+  if (!promisedAt) return false; // No promised date = not overdue
   if (status === "READY" || status === "PICKED_UP" || status === "ARCHIVED") return false;
   return new Date(promisedAt) < new Date();
 }
 
-export function isPromisedToday(promisedAt: Date | string): boolean {
+export function isPromisedToday(promisedAt: Date | string | null): boolean {
+  if (!promisedAt) return false;
   const today = new Date();
   const promised = new Date(promisedAt);
   return (
