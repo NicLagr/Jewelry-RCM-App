@@ -1088,9 +1088,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   </CardContent>
                 </Card>
               </TabsContent>
-            </Tabs>
+          </Tabs>
         </div>
-      </div>
 
       {/* SMS Modal */}
       {showSmsModal && (
