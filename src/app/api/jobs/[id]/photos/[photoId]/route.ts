@@ -31,22 +31,22 @@ export async function DELETE(
     // Extract the storage path from the URL
     // URL format: https://xxx.supabase.co/storage/v1/object/public/job-photos/jobId/timestamp.ext
     try {
-      const url = new URL(media.url);
+    const url = new URL(media.url);
       // The path after /object/public/job-photos/ is what we need
       const match = url.pathname.match(/\/object\/public\/job-photos\/(.+)$/);
       const storagePath = match ? match[1] : null;
 
       console.log("Deleting from storage:", { url: media.url, storagePath });
 
-      if (storagePath) {
-        // Delete from Supabase Storage
+    if (storagePath) {
+      // Delete from Supabase Storage
         const { error: deleteError, data: deleteData } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .remove([storagePath]);
+        .from(STORAGE_BUCKET)
+        .remove([storagePath]);
 
-        if (deleteError) {
-          console.error("Supabase delete error:", deleteError);
-          // Continue with database deletion even if storage delete fails
+      if (deleteError) {
+        console.error("Supabase delete error:", deleteError);
+        // Continue with database deletion even if storage delete fails
         } else {
           console.log("Storage delete successful:", deleteData);
         }

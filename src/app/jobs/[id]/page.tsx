@@ -572,14 +572,14 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   <h1 className="text-2xl font-bold text-slate-900">
                     Ticket #{job.jobNumber} — Job Detail
                   </h1>
-                  <Button
+              <Button
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={startEditingJobNumber}
-                  >
+              >
                     <Pencil className="h-4 w-4 text-slate-400" />
-                  </Button>
+              </Button>
                 </div>
               )}
             </div>
@@ -595,14 +595,14 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="media">Media</TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
-          </TabsList>
+              </TabsList>
 
           <TabsContent value="overview" className="mt-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column - Customer, Item, Services */}
                 <div className="lg:col-span-2 space-y-6">
                   {/* Customer */}
-                  <Card>
+                <Card>
                     <CardHeader className="pb-3 flex flex-row items-center justify-between">
                       <CardTitle className="text-base font-semibold">Customer</CardTitle>
                       {!editingCustomer && (
@@ -610,7 +610,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                           <Pencil className="h-4 w-4" />
                         </Button>
                       )}
-                    </CardHeader>
+                  </CardHeader>
                     <CardContent>
                       {editingCustomer ? (
                         <div className="space-y-3">
@@ -625,7 +625,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                               value={customerEdits.lastName}
                               onChange={(e) => setCustomerEdits({ ...customerEdits, lastName: e.target.value })}
                             />
-                          </div>
+                      </div>
                           <Input
                             placeholder="Phone"
                             value={customerEdits.phone}
@@ -643,7 +643,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                             <Button size="sm" variant="outline" onClick={() => setEditingCustomer(false)}>
                               Cancel
                             </Button>
-                          </div>
+                        </div>
                         </div>
                       ) : (
                         <>
@@ -661,8 +661,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                           {job.customer.email && (
                             <div className="text-sm text-slate-500 mt-1">
                               {job.customer.email}
-                            </div>
-                          )}
+                        </div>
+                      )}
                         </>
                       )}
                     </CardContent>
@@ -697,7 +697,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                               value={itemEdits.itemStone}
                               onChange={(e) => setItemEdits({ ...itemEdits, itemStone: e.target.value })}
                             />
-                          </div>
+                    </div>
                           <Textarea
                             placeholder="Description"
                             value={itemEdits.description}
@@ -711,7 +711,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                             <Button size="sm" variant="outline" onClick={() => setEditingItem(false)}>
                               Cancel
                             </Button>
-                          </div>
+                      </div>
                         </div>
                       ) : (
                         <>
@@ -729,7 +729,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                                 <span>{job.itemStone}</span>
                               </>
                             )}
-                          </div>
+                    </div>
                           {job.description && (
                             <p className="text-sm text-slate-500 mt-1">
                               Desc: {job.description}
@@ -737,10 +737,10 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                           )}
                         </>
                       )}
-                    </CardContent>
-                  </Card>
+                  </CardContent>
+                </Card>
 
-                  {/* Services */}
+                {/* Services */}
                   <Card>
                     <CardHeader className="pb-3 flex flex-row items-center justify-between">
                       <CardTitle className="text-base font-semibold">Services</CardTitle>
@@ -749,8 +749,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                           <Pencil className="h-4 w-4" />
                         </Button>
                       )}
-                    </CardHeader>
-                    <CardContent>
+                  </CardHeader>
+                  <CardContent>
                       {editingServices ? (
                         <div className="space-y-3">
                           {servicesEdits.filter((s) => !s.toDelete).map((service, index) => (
@@ -802,38 +802,38 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                           </div>
                         </div>
                       ) : (
-                        <div className="overflow-x-auto">
+                    <div className="overflow-x-auto">
                           <table className="w-full text-sm">
-                            <thead>
-                              <tr className="border-b border-slate-200">
+                        <thead>
+                          <tr className="border-b border-slate-200">
                                 <th className="text-left py-2 font-medium text-slate-500">Service</th>
                                 <th className="text-center py-2 font-medium text-slate-500">Qty</th>
                                 <th className="text-right py-2 font-medium text-slate-500">Unit</th>
                                 <th className="text-right py-2 font-medium text-slate-500">Total</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {job.services.map((service) => (
-                                <tr key={service.id} className="border-b border-slate-100">
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {job.services.map((service) => (
+                            <tr key={service.id} className="border-b border-slate-100">
                                   <td className="py-2">{service.name}</td>
                                   <td className="py-2 text-center">{service.qty}</td>
                                   <td className="py-2 text-right">${(service.unitPriceCents / 100).toFixed(0)}</td>
                                   <td className="py-2 text-right">${((service.qty * service.unitPriceCents) / 100).toFixed(0)}</td>
-                                </tr>
-                              ))}
+                            </tr>
+                          ))}
                               {job.services.length === 0 && (
                                 <tr>
                                   <td colSpan={4} className="py-4 text-center text-slate-500">
                                     No services added
-                                  </td>
-                                </tr>
+                            </td>
+                          </tr>
                               )}
                             </tbody>
-                          </table>
-                        </div>
+                      </table>
+                    </div>
                       )}
-                    </CardContent>
-                  </Card>
+                  </CardContent>
+                </Card>
 
                   {/* Issue */}
                   <Card>
@@ -1210,7 +1210,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                       </div>
                       <div className="flex justify-between items-center py-2 border-b border-slate-100">
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-600">Deposit Paid</span>
+                        <span className="text-slate-600">Deposit Paid</span>
                           {!editingDeposit && (
                             <Button
                               variant="ghost"
@@ -1254,8 +1254,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                           </div>
                         ) : (
                           <span className="font-medium text-green-600 w-28 text-right">
-                            -{formatCents(job.depositCents)}
-                          </span>
+                          -{formatCents(job.depositCents)}
+                        </span>
                         )}
                       </div>
                       <div className="flex justify-between py-3 text-lg">
@@ -1277,8 +1277,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   </CardContent>
                 </Card>
               </TabsContent>
-          </Tabs>
-        </div>
+            </Tabs>
+      </div>
 
       {/* SMS Modal */}
       {showSmsModal && (

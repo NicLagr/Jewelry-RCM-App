@@ -292,8 +292,8 @@ export default function NewTicketPage() {
       let promisedAt = null;
       if (promisedDate) {
         promisedAt = promisedTime
-          ? `${promisedDate}T${promisedTime}:00`
-          : `${promisedDate}T17:00:00`;
+        ? `${promisedDate}T${promisedTime}:00`
+        : `${promisedDate}T17:00:00`;
       }
 
       const payload = {
@@ -519,42 +519,42 @@ export default function NewTicketPage() {
           </CardContent>
         </Card>
 
-            {/* Services */}
+        {/* Services */}
             <Card className="min-h-[200px]">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Services</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          </CardHeader>
+          <CardContent className="space-y-4">
                 {/* Services List */}
                 {serviceLines.length > 0 && (
                   <div className="space-y-4">
-                    {serviceLines.map((line, index) => (
+            {serviceLines.map((line, index) => (
                       <div key={line.id} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
                         <div className="flex items-start justify-between gap-3">
                           {/* Service Name Section */}
                           <div className="flex-1 min-w-0">
                             <Label className="text-xs text-slate-500 mb-1 block">Service</Label>
-                            <Select
-                              value={line.serviceCatalogId || "custom"}
-                              onChange={(e) => handleServiceSelect(line.id, e.target.value)}
+                    <Select
+                      value={line.serviceCatalogId || "custom"}
+                      onChange={(e) => handleServiceSelect(line.id, e.target.value)}
                               className="w-full text-sm"
-                            >
+                    >
                               <option value="custom">Select or type service...</option>
-                              {services.map((service) => (
-                                <option key={service.id} value={service.id}>
+                      {services.map((service) => (
+                        <option key={service.id} value={service.id}>
                                   {service.name}
-                                </option>
-                              ))}
-                            </Select>
-                            {!line.serviceCatalogId && (
-                              <Input
+                        </option>
+                      ))}
+                    </Select>
+                    {!line.serviceCatalogId && (
+                      <Input
                                 placeholder="Custom service name"
-                                value={line.name}
+                        value={line.name}
                                 onChange={(e) => updateServiceLine(line.id, { name: e.target.value })}
                                 className="mt-2 text-sm"
-                              />
-                            )}
-                          </div>
+                      />
+                    )}
+                  </div>
                           
                           {/* Remove Button */}
                           <Button
@@ -570,17 +570,17 @@ export default function NewTicketPage() {
                         
                         {/* Qty, Price, Total Row */}
                         <div className="grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-slate-200">
-                          <div>
+                  <div>
                             <Label className="text-xs text-slate-500 mb-1 block">Qty</Label>
-                            <Input
-                              type="number"
-                              min="1"
-                              value={line.qty}
+                    <Input
+                      type="number"
+                      min="1"
+                      value={line.qty}
                               onChange={(e) => updateServiceLine(line.id, { qty: parseInt(e.target.value) || 1 })}
                               className="w-full text-sm text-center"
-                            />
-                          </div>
-                          <div>
+                    />
+                  </div>
+                  <div>
                             <Label className="text-xs text-slate-500 mb-1 block">Unit Price</Label>
                             <PriceInput
                               value={line.unitPriceCents}
@@ -601,22 +601,22 @@ export default function NewTicketPage() {
 
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={addServiceLine}
+              variant="outline"
+              onClick={addServiceLine}
                   className="w-full"
-                >
+            >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Service
-                </Button>
+              Add Service
+            </Button>
 
-                {serviceLines.length > 0 && (
+            {serviceLines.length > 0 && (
                   <div className="pt-4 border-t border-slate-200 space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500">Subtotal:</span>
                       <span className="text-xl font-bold text-slate-900">
-                        {formatCents(subtotal)}
-                      </span>
-                    </div>
+                    {formatCents(subtotal)}
+                  </span>
+                </div>
                     {showDeposit ? (
                       <>
                         <div className="flex justify-between items-center">
@@ -736,10 +736,10 @@ export default function NewTicketPage() {
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </div>
+            )}
+          </CardContent>
+        </Card>
           </div>
         </div>
 
@@ -806,7 +806,7 @@ export default function NewTicketPage() {
             {/* Info message */}
             <p className="text-sm text-slate-500">
               Leave blank if no specific date is promised. If set, this date will be shown to the customer in SMS notifications.
-            </p>
+              </p>
           </CardContent>
         </Card>
 

@@ -156,7 +156,7 @@ export async function POST(request: Request) {
         itemStone,
         description,
         issue,
-        promisedAt: promisedAt ? new Date(promisedAt) : null,
+        ...(promisedAt && { promisedAt: new Date(promisedAt) }),
         assigneeId: assigneeId || null,
         depositCents: depositCents || 0,
         services: {

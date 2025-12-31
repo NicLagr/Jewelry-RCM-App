@@ -330,9 +330,9 @@ export default function JobsPage() {
             onDragEnd={handleDragEnd}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {STATUSES.map((status) => {
+            {STATUSES.map((status) => {
                 const statusJobs = getJobsByStatus(status.key);
-                return (
+              return (
                   <div key={status.key} className="flex flex-col">
                     {/* Column Header */}
                     <div className="flex items-center justify-between mb-3 px-1">
@@ -346,26 +346,26 @@ export default function JobsPage() {
                     
                     {/* Column Content */}
                     <DroppableColumn status={status.key}>
-                      <div className="space-y-3 max-h-[calc(100vh-320px)] overflow-y-auto">
-                        {statusJobs.length === 0 ? (
-                          <p className="text-sm text-slate-500 text-center py-8">
-                            No jobs
-                          </p>
-                        ) : (
-                          statusJobs.map((job) => (
+                    <div className="space-y-3 max-h-[calc(100vh-320px)] overflow-y-auto">
+                      {statusJobs.length === 0 ? (
+                        <p className="text-sm text-slate-500 text-center py-8">
+                          No jobs
+                        </p>
+                      ) : (
+                        statusJobs.map((job) => (
                             <DraggableJobCard
                               key={job.id}
                               job={job}
                               isDragging={activeJob?.id === job.id}
                             />
-                          ))
-                        )}
-                      </div>
+                        ))
+                      )}
+                    </div>
                     </DroppableColumn>
-                  </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
+          </div>
             
             {/* Drag Overlay - Shows preview of card being dragged */}
             <DragOverlay>
