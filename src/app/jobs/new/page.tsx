@@ -762,31 +762,21 @@ export default function NewTicketPage() {
               Back
             </Button>
           </Link>
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-3">
-              <Button type="button" variant="outline" size="lg" disabled title="Not yet implemented">
-                Save Draft
-              </Button>
           <Button
             type="submit"
             size="lg"
-                className={cn(!isValid && "opacity-50")}
+            className={cn(!isValid && "opacity-50")}
             disabled={!isValid || loading || uploadingPhotos}
           >
-                {loading || uploadingPhotos ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {uploadingPhotos ? "Uploading photos..." : "Creating..."}
-                  </>
-                ) : (
-                  "Save Job"
-                )}
+            {loading || uploadingPhotos ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {uploadingPhotos ? "Uploading photos..." : "Creating..."}
+              </>
+            ) : (
+              "Save Job"
+            )}
           </Button>
-            </div>
-            <p className="text-xs text-slate-400 text-right">
-              Save Draft not yet implemented for demo
-            </p>
-          </div>
         </div>
       </form>
 
