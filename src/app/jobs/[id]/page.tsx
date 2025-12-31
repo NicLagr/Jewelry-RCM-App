@@ -125,6 +125,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [promisedDateEdit, setPromisedDateEdit] = useState("");
   const [promisedTimeEdit, setPromisedTimeEdit] = useState("");
   const [servicesEdits, setServicesEdits] = useState<{ id: string; name: string; qty: number; unitPriceCents: number; isNew?: boolean; toDelete?: boolean }[]>([]);
+  const [editingDeposit, setEditingDeposit] = useState(false);
+  const [depositEdit, setDepositEdit] = useState("");
 
   const fetchJob = useCallback(async () => {
     try {
@@ -1206,16 +1208,69 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                         <span className="text-slate-600">Subtotal</span>
                         <span className="font-medium">{formatCents(subtotal)}</span>
                       </div>
-                      <div className="flex justify-between py-2 border-b border-slate-100">
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100">
                         <span className="text-slate-600">Deposit Paid</span>
-                        <span className="font-medium text-green-600">
-                          -{formatCents(job.depositCents)}
-                        </span>
+                        {editingDeposit ? (
+                          <div className="flex items-center gap-2">
+                            <div className="relative w-28">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                              <Input
+                                type="number"
+                                value={depositEdit}
+                                onChange={(e) => setDepositEdit(e.target.value)}
+                                className="pl-6 text-right"
+                                autoFocus
+                              />
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={async () => {
+                                const cents = Math.round(parseFloat(depositEdit) * 100) || 0;
+                                await updateJob({ depositCents: cents } as Partial<Job>);
+                                setEditingDeposit(false);
+                              }}
+                              disabled={updating}
+                            >
+                              <Save className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingDeposit(false)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 group">
+                            <span className="font-medium text-green-600">
+                              -{formatCents(job.depositCents)}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => {
+                                setDepositEdit((job.depositCents / 100).toFixed(2));
+                                setEditingDeposit(true);
+                              }}
+                            >
+                              <Pencil className="h-3 w-3 text-slate-400" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                       <div className="flex justify-between py-3 text-lg">
                         <span className="font-semibold">Balance Due</span>
-                      <span className="font-bold">{formatCents(subtotal - job.depositCents)}</span>
+                        <span className={cn(
+                          "font-bold",
+                          subtotal - job.depositCents <= 0 ? "text-green-600" : ""
+                        )}>
+                          {formatCents(subtotal - job.depositCents)}
+                        </span>
                       </div>
+                      {subtotal - job.depositCents <= 0 && job.depositCents > 0 && (
+                        <div className="flex items-center justify-center gap-2 py-2 bg-green-50 rounded-lg text-green-700">
+                          <CheckCircle className="h-5 w-5" />
+                          <span className="font-medium">Paid in Full</span>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
