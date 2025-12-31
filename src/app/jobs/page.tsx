@@ -9,12 +9,24 @@ import {
   Calendar,
   User,
   Archive,
+  GripVertical,
 } from "lucide-react";
+import {
+  DndContext,
+  DragOverlay,
+  useDraggable,
+  useDroppable,
+  DragStartEvent,
+  DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+} from "@dnd-kit/core";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {
-  formatDate,
   getStatusColor,
   getStatusLabel,
   isOverdue,
@@ -75,8 +87,19 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [activeJob, setActiveJob] = useState<Job | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const searchQuery = searchParams.get("search");
+
+  // Configure sensors for drag detection
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Minimum drag distance before activation
+      },
+    })
+  );
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
@@ -110,6 +133,65 @@ export default function JobsPage() {
     }
     
     return filtered;
+  };
+
+  // Handle drag start
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const draggedJob = jobs.find((job) => job.id === active.id);
+    if (draggedJob) {
+      setActiveJob(draggedJob);
+    }
+  };
+
+  // Handle drag end - update job status
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveJob(null);
+
+    if (!over) return;
+
+    const jobId = active.id as string;
+    const newStatus = over.id as string;
+    const job = jobs.find((j) => j.id === jobId);
+
+    if (!job || job.status === newStatus) return;
+
+    // Optimistically update the UI
+    setJobs((prevJobs) =>
+      prevJobs.map((j) =>
+        j.id === jobId ? { ...j, status: newStatus } : j
+      )
+    );
+
+    setIsUpdating(true);
+    try {
+      const res = await fetch(`/api/jobs/${jobId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) {
+        // Revert on error
+        setJobs((prevJobs) =>
+          prevJobs.map((j) =>
+            j.id === jobId ? { ...j, status: job.status } : j
+          )
+        );
+        console.error("Failed to update job status");
+      }
+    } catch (error) {
+      // Revert on error
+      setJobs((prevJobs) =>
+        prevJobs.map((j) =>
+          j.id === jobId ? { ...j, status: job.status } : j
+        )
+      );
+      console.error("Error updating job status:", error);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const overdueJobs = jobs.filter((job) => isOverdue(job.promisedAt, job.status));
@@ -240,10 +322,12 @@ export default function JobsPage() {
           </div>
         ) : (
           /* Kanban Board - Default View */
-          <>
-            <p className="text-xs text-slate-500 mb-4">
-              Note: Drag-and-drop between columns not yet implemented for demo. Click cards to change status.
-            </p>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {STATUSES.map((status) => {
                 const statusJobs = getJobsByStatus(status.key);
@@ -253,14 +337,14 @@ export default function JobsPage() {
                     <div className="flex items-center justify-between mb-3 px-1">
                       <h2 className="font-semibold text-slate-900 text-base">
                         {status.label}
-                        </h2>
+                      </h2>
                       <Badge variant="secondary" className="text-xs">
                         {statusJobs.length}
                       </Badge>
-                      </div>
+                    </div>
                     
                     {/* Column Content */}
-                    <div className="bg-slate-100 rounded-xl p-3 flex-1 min-h-[400px]">
+                    <DroppableColumn status={status.key}>
                       <div className="space-y-3 max-h-[calc(100vh-320px)] overflow-y-auto">
                         {statusJobs.length === 0 ? (
                           <p className="text-sm text-slate-500 text-center py-8">
@@ -268,22 +352,178 @@ export default function JobsPage() {
                           </p>
                         ) : (
                           statusJobs.map((job) => (
-                            <JobCard key={job.id} job={job} />
+                            <DraggableJobCard
+                              key={job.id}
+                              job={job}
+                              isDragging={activeJob?.id === job.id}
+                            />
                           ))
                         )}
                       </div>
-                    </div>
+                    </DroppableColumn>
                   </div>
                 );
               })}
             </div>
-          </>
+            
+            {/* Drag Overlay - Shows preview of card being dragged */}
+            <DragOverlay>
+              {activeJob ? (
+                <JobCardContent job={activeJob} isOverlay />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         )}
       </div>
     </div>
   );
 }
 
+// Droppable column wrapper for each status column
+function DroppableColumn({
+  status,
+  children,
+}: {
+  status: string;
+  children: React.ReactNode;
+}) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: status,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "bg-slate-100 rounded-xl p-3 flex-1 min-h-[400px] transition-colors duration-200",
+        isOver && "bg-[#1a4d3e]/10 ring-2 ring-[#1a4d3e] ring-inset"
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+// Draggable job card wrapper
+function DraggableJobCard({
+  job,
+  isDragging,
+}: {
+  job: Job;
+  isDragging?: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: job.id,
+    data: { job },
+  });
+
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      }
+    : undefined;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "touch-none",
+        isDragging && "opacity-50"
+      )}
+    >
+      <JobCardContent
+        job={job}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
+    </div>
+  );
+}
+
+// Job card content (used for both draggable and overlay)
+function JobCardContent({
+  job,
+  dragHandleProps,
+  isOverlay,
+}: {
+  job: Job;
+  dragHandleProps?: Record<string, unknown>;
+  isOverlay?: boolean;
+}) {
+  const overdue = isOverdue(job.promisedAt, job.status);
+  const isCompleted = job.status === "PICKED_UP" || job.status === "ARCHIVED";
+
+  // Format customer name as initial + last name (e.g., "O. Rivera")
+  const customerInitial = job.customer.firstName[0];
+  const customerDisplay = `${customerInitial}. ${job.customer.lastName}`;
+
+  // Format dates as MM/DD
+  const formatDateShort = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+  };
+
+  return (
+    <Card
+      className={cn(
+        "p-4 transition-all border group",
+        overdue ? "border-red-300 bg-red-50" : "border-slate-200 bg-white",
+        isOverlay && "shadow-xl rotate-2 scale-105"
+      )}
+    >
+      {/* Drag Handle and Job Number */}
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <button
+            {...dragHandleProps}
+            className={cn(
+              "cursor-grab active:cursor-grabbing p-1 -ml-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors",
+              isOverlay && "cursor-grabbing"
+            )}
+            onClick={(e) => e.preventDefault()}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <Link
+            href={`/jobs/${job.id}`}
+            className="font-medium text-slate-900 hover:text-[#1a4d3e] hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            #{job.jobNumber} • {customerDisplay}
+          </Link>
+        </div>
+      </div>
+
+      {/* Status Badge */}
+      <div className="mb-2 ml-7">
+        <Badge
+          className={cn(
+            "text-xs",
+            overdue
+              ? "bg-red-100 text-red-800"
+              : getStatusColor(job.status)
+          )}
+        >
+          {overdue ? "Overdue" : getStatusLabel(job.status)}
+        </Badge>
+      </div>
+
+      {/* Item and Date */}
+      <p className="text-sm text-slate-600 mb-1 ml-7">
+        {job.itemType} • {isCompleted 
+          ? `Completed: ${formatDateShort(job.updatedAt)} (Promised: ${formatDateShort(job.promisedAt)})` 
+          : `Promised: ${formatDateShort(job.promisedAt)}`}
+      </p>
+
+      {/* Issue */}
+      <p className="text-sm text-slate-500 ml-7">
+        Issue: {job.issue}
+      </p>
+    </Card>
+  );
+}
+
+// Simple job card for search results (not draggable)
 function JobCard({ job }: { job: Job }) {
   const overdue = isOverdue(job.promisedAt, job.status);
   const isCompleted = job.status === "PICKED_UP" || job.status === "ARCHIVED";
