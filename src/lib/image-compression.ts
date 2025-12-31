@@ -1,168 +1,181 @@
 import sharp from "sharp";
 
-export interface CompressionOptions {
-  maxWidth?: number;
-  maxHeight?: number;
-  quality?: number;
-  format?: "webp" | "jpeg";
-}
+/**
+ * Image compression configuration
+ * Optimized for jewelry photography - needs to preserve detail for prongs, stones, damage
+ */
+export const COMPRESSION_CONFIG: {
+  maxDimension: number;
+  webpQuality: number;
+  jpegQuality: number;
+  maxFileSizeBytes: number;
+  minQuality: number;
+} = {
+  // Maximum dimension for the longest side
+  maxDimension: 1920,
+  // Target quality for WebP (0-100)
+  webpQuality: 80,
+  // Target quality for JPEG fallback (0-100)
+  jpegQuality: 82,
+  // Maximum file size target in bytes (~300KB)
+  maxFileSizeBytes: 300 * 1024,
+  // Minimum quality to maintain visual clarity
+  minQuality: 60,
+};
 
+/**
+ * Compression result with metadata
+ */
 export interface CompressionResult {
   buffer: Buffer;
   contentType: string;
   extension: string;
   originalSize: number;
   compressedSize: number;
-  compressionRatio: number;
+  width: number;
+  height: number;
 }
 
-const DEFAULT_OPTIONS: CompressionOptions = {
-  maxWidth: 1920,
-  maxHeight: 1920,
-  quality: 80,
-  format: "webp",
-};
-
 /**
- * Compresses an image buffer for optimal storage while maintaining visual clarity.
- * Designed for jewelry photography where detail preservation is critical.
+ * Compress an image buffer using Sharp
+ * Optimized for jewelry photos - maintains clarity for detail identification
  * 
- * Target: ~100-300KB per image from 3-5MB phone camera images
- * - Preserves aspect ratio
- * - Resizes to max 1920px on longest side
- * - Converts to WebP (with JPEG fallback)
- * - Quality set to 80% for good detail retention
+ * @param inputBuffer - Original image buffer
+ * @param originalFilename - Original filename for format detection
+ * @returns Compressed image data with metadata
  */
 export async function compressImage(
   inputBuffer: Buffer,
-  options: CompressionOptions = {}
+  originalFilename: string
 ): Promise<CompressionResult> {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
   const originalSize = inputBuffer.length;
-
+  
   // Get image metadata
   const metadata = await sharp(inputBuffer).metadata();
+  const { width: origWidth, height: origHeight, format } = metadata;
   
-  // Calculate resize dimensions while preserving aspect ratio
-  let resizeOptions: { width?: number; height?: number } = {};
+  if (!origWidth || !origHeight) {
+    throw new Error("Could not read image dimensions");
+  }
   
-  if (metadata.width && metadata.height) {
-    const aspectRatio = metadata.width / metadata.height;
-    
-    if (metadata.width > metadata.height) {
-      // Landscape: constrain by width
-      if (metadata.width > opts.maxWidth!) {
-        resizeOptions.width = opts.maxWidth;
-      }
+  // Calculate new dimensions maintaining aspect ratio
+  let newWidth = origWidth;
+  let newHeight = origHeight;
+  
+  if (origWidth > COMPRESSION_CONFIG.maxDimension || origHeight > COMPRESSION_CONFIG.maxDimension) {
+    if (origWidth > origHeight) {
+      newWidth = COMPRESSION_CONFIG.maxDimension;
+      newHeight = Math.round((origHeight / origWidth) * COMPRESSION_CONFIG.maxDimension);
     } else {
-      // Portrait or square: constrain by height
-      if (metadata.height > opts.maxHeight!) {
-        resizeOptions.height = opts.maxHeight;
-      }
+      newHeight = COMPRESSION_CONFIG.maxDimension;
+      newWidth = Math.round((origWidth / origHeight) * COMPRESSION_CONFIG.maxDimension);
     }
   }
-
-  // Process the image
-  let sharpInstance = sharp(inputBuffer);
   
-  // Resize if needed
-  if (resizeOptions.width || resizeOptions.height) {
-    sharpInstance = sharpInstance.resize({
-      ...resizeOptions,
-      fit: "inside",
-      withoutEnlargement: true,
-    });
+  // Try WebP first (best compression with quality)
+  let result = await compressToFormat(inputBuffer, newWidth, newHeight, "webp", COMPRESSION_CONFIG.webpQuality);
+  
+  // If still too large, progressively reduce quality
+  let quality = COMPRESSION_CONFIG.webpQuality;
+  while (result.length > COMPRESSION_CONFIG.maxFileSizeBytes && quality > COMPRESSION_CONFIG.minQuality) {
+    quality -= 5;
+    result = await compressToFormat(inputBuffer, newWidth, newHeight, "webp", quality);
   }
-
-  // Convert to target format
-  let buffer: Buffer;
-  let contentType: string;
-  let extension: string;
-
-  if (opts.format === "webp") {
-    buffer = await sharpInstance
-      .webp({ quality: opts.quality, effort: 4 })
-      .toBuffer();
-    contentType = "image/webp";
-    extension = "webp";
-  } else {
-    buffer = await sharpInstance
-      .jpeg({ quality: opts.quality, mozjpeg: true })
-      .toBuffer();
-    contentType = "image/jpeg";
-    extension = "jpg";
+  
+  // If WebP still too large or not supported, try JPEG
+  if (result.length > COMPRESSION_CONFIG.maxFileSizeBytes) {
+    quality = COMPRESSION_CONFIG.jpegQuality;
+    result = await compressToFormat(inputBuffer, newWidth, newHeight, "jpeg", quality);
+    
+    while (result.length > COMPRESSION_CONFIG.maxFileSizeBytes && quality > COMPRESSION_CONFIG.minQuality) {
+      quality -= 5;
+      result = await compressToFormat(inputBuffer, newWidth, newHeight, "jpeg", quality);
+    }
+    
+    // Final check - if JPEG is smaller, use it
+    const webpResult = await compressToFormat(inputBuffer, newWidth, newHeight, "webp", COMPRESSION_CONFIG.minQuality);
+    if (webpResult.length < result.length) {
+      return {
+        buffer: webpResult,
+        contentType: "image/webp",
+        extension: "webp",
+        originalSize,
+        compressedSize: webpResult.length,
+        width: newWidth,
+        height: newHeight,
+      };
+    }
+    
+    return {
+      buffer: result,
+      contentType: "image/jpeg",
+      extension: "jpg",
+      originalSize,
+      compressedSize: result.length,
+      width: newWidth,
+      height: newHeight,
+    };
   }
-
-  const compressedSize = buffer.length;
-  const compressionRatio = originalSize / compressedSize;
-
+  
   return {
-    buffer,
-    contentType,
-    extension,
+    buffer: result,
+    contentType: "image/webp",
+    extension: "webp",
     originalSize,
-    compressedSize,
-    compressionRatio,
+    compressedSize: result.length,
+    width: newWidth,
+    height: newHeight,
   };
 }
 
 /**
- * Compresses an image more aggressively for archival storage.
- * Used for images older than 6 months where space savings take priority.
- * 
- * Target: ~30-50KB per image
- * - Reduces to 800px max dimension
- * - Quality reduced to 60%
- * - Always uses WebP for best compression
+ * Compress image to specific format with given quality
  */
-export async function compressImageForArchive(
-  inputBuffer: Buffer
-): Promise<CompressionResult> {
-  return compressImage(inputBuffer, {
-    maxWidth: 800,
-    maxHeight: 800,
-    quality: 60,
-    format: "webp",
-  });
+async function compressToFormat(
+  inputBuffer: Buffer,
+  width: number,
+  height: number,
+  format: "webp" | "jpeg",
+  quality: number
+): Promise<Buffer> {
+  const pipeline = sharp(inputBuffer)
+    .resize(width, height, {
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .rotate(); // Auto-rotate based on EXIF orientation
+  
+  if (format === "webp") {
+    return pipeline.webp({ quality, effort: 4 }).toBuffer();
+  } else {
+    return pipeline.jpeg({ quality, mozjpeg: true }).toBuffer();
+  }
 }
 
 /**
- * Creates a tiny thumbnail for minimal storage.
- * Used when keeping a visual reference but maximizing space savings.
- * 
- * Target: ~5-15KB per image
+ * Generate a compressed filename with new extension
  */
-export async function createThumbnail(
-  inputBuffer: Buffer
-): Promise<CompressionResult> {
-  return compressImage(inputBuffer, {
-    maxWidth: 200,
-    maxHeight: 200,
-    quality: 50,
-    format: "webp",
-  });
+export function generateCompressedFilename(
+  jobId: string,
+  extension: string
+): string {
+  const timestamp = Date.now();
+  return `${jobId}/${timestamp}.${extension}`;
 }
 
 /**
- * Validates if a file is an image that can be processed
+ * Check if image needs compression based on size
+ * Skip compression for already small images
  */
-export function isProcessableImage(mimeType: string): boolean {
-  const supportedTypes = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/webp",
-    "image/gif",
-    "image/heic",
-    "image/heif",
-  ];
-  return supportedTypes.includes(mimeType.toLowerCase());
+export function needsCompression(fileSize: number): boolean {
+  // If already under 200KB, skip compression
+  return fileSize > 200 * 1024;
 }
 
 /**
- * Formats file size in human readable format
+ * Format bytes to human readable string
  */
-export function formatFileSize(bytes: number): string {
+export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;

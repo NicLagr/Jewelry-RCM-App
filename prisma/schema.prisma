@@ -37,27 +37,25 @@ model Customer {
 }
 
 model Job {
-  id              String           @id @default(cuid())
-  jobNumber       Int              @unique
-  customerId      String
-  customer        Customer         @relation(fields: [customerId], references: [id])
-  status          String           @default("INTAKE")
-  itemType        String // Ring, Necklace, Bracelet, Watch, Earrings, Other
-  itemMetal       String? // Gold, Silver, Platinum, etc.
-  itemStone       String? // Diamond, Ruby, etc.
-  description     String?
-  issue           String
-  promisedAt      DateTime?
-  assigneeId      String?
-  assignee        User?            @relation("AssignedJobs", fields: [assigneeId], references: [id])
-  depositCents    Int              @default(0)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  archivedAt      DateTime? // Timestamp when job was archived (for 6-month cleanup)
-  retentionPolicy String           @default("STANDARD") // STANDARD, VIP_EXEMPT, PERMANENT
-  services        JobServiceLine[]
-  media           JobMedia[]
-  activities      JobActivity[]
+  id           String           @id @default(cuid())
+  jobNumber    Int              @unique
+  customerId   String
+  customer     Customer         @relation(fields: [customerId], references: [id])
+  status       String           @default("INTAKE")
+  itemType     String // Ring, Necklace, Bracelet, Watch, Earrings, Other
+  itemMetal    String? // Gold, Silver, Platinum, etc.
+  itemStone    String? // Diamond, Ruby, etc.
+  description  String?
+  issue        String
+  promisedAt   DateTime?
+  assigneeId   String?
+  assignee     User?            @relation("AssignedJobs", fields: [assigneeId], references: [id])
+  depositCents Int              @default(0)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  services     JobServiceLine[]
+  media        JobMedia[]
+  activities   JobActivity[]
 }
 
 model ServiceCatalog {
@@ -83,16 +81,12 @@ model JobServiceLine {
 }
 
 model JobMedia {
-  id                  String    @id @default(cuid())
-  jobId               String
-  job                 Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  url                 String
-  filename            String?
-  storagePath         String? // Path in Supabase storage for deletion
-  originalSizeBytes   Int? // Original file size before compression
-  compressedSizeBytes Int? // Compressed file size
-  compressedAt        DateTime? // When image was further compressed for archive
-  createdAt           DateTime  @default(now())
+  id        String   @id @default(cuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  url       String
+  filename  String?
+  createdAt DateTime @default(now())
 }
 
 model JobActivity {

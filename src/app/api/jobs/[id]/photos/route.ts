@@ -4,8 +4,9 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { supabase, STORAGE_BUCKET } from "@/lib/supabase";
 import {
   compressImage,
-  isProcessableImage,
-  formatFileSize,
+  generateCompressedFilename,
+  needsCompression,
+  formatBytes,
 } from "@/lib/image-compression";
 
 // GET /api/jobs/[id]/photos - List photos for a job
@@ -45,16 +46,7 @@ export async function GET(
   }
 }
 
-/**
- * Generates a unique filename for uploaded photos
- * Now uses .webp extension for compressed images
- */
-function generateCompressedFilename(jobId: string, extension: string): string {
-  const timestamp = Date.now();
-  return `${jobId}/${timestamp}.${extension}`;
-}
-
-// POST /api/jobs/[id]/photos - Upload a photo with compression
+// POST /api/jobs/[id]/photos - Upload a photo
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -92,7 +84,7 @@ export async function POST(
       );
     }
 
-    // Validate file size (max 10MB for original upload)
+    // Validate file size (max 10MB for raw upload, will be compressed)
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
@@ -103,53 +95,43 @@ export async function POST(
 
     // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();
-    const originalBuffer = Buffer.from(arrayBuffer);
-    const originalSize = originalBuffer.length;
+    const inputBuffer = Buffer.from(arrayBuffer);
 
-    let finalBuffer: Buffer;
+    let uploadBuffer: Buffer;
     let contentType: string;
-    let extension: string;
+    let filename: string;
     let compressionInfo = "";
 
-    // Compress the image if it's a processable format
-    if (isProcessableImage(file.type)) {
+    // Compress image if needed (skip for already small images)
+    if (needsCompression(file.size)) {
       try {
-        const result = await compressImage(originalBuffer, {
-          maxWidth: 1920,
-          maxHeight: 1920,
-          quality: 80,
-          format: "webp",
-        });
-
-        finalBuffer = result.buffer;
+        const result = await compressImage(inputBuffer, file.name);
+        uploadBuffer = result.buffer;
         contentType = result.contentType;
-        extension = result.extension;
-        compressionInfo = ` (compressed from ${formatFileSize(result.originalSize)} to ${formatFileSize(result.compressedSize)}, ${result.compressionRatio.toFixed(1)}x reduction)`;
-
+        filename = generateCompressedFilename(id, result.extension);
+        compressionInfo = ` (compressed: ${formatBytes(result.originalSize)} → ${formatBytes(result.compressedSize)})`;
+        
         console.log(
-          `[Photo Upload] Job #${job.jobNumber}: ${formatFileSize(originalSize)} → ${formatFileSize(result.compressedSize)} (${result.compressionRatio.toFixed(1)}x)`
+          `Image compressed: ${file.name} - ${formatBytes(result.originalSize)} → ${formatBytes(result.compressedSize)} (${result.width}x${result.height})`
         );
       } catch (compressionError) {
-        // If compression fails, fall back to original
-        console.warn("Image compression failed, using original:", compressionError);
-        finalBuffer = originalBuffer;
+        console.error("Compression failed, uploading original:", compressionError);
+        // Fall back to original if compression fails
+        uploadBuffer = inputBuffer;
         contentType = file.type;
-        extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        filename = generateCompressedFilename(id, file.name.split(".").pop() || "jpg");
       }
     } else {
-      // Non-processable format, use original
-      finalBuffer = originalBuffer;
+      // Small file, upload as-is but still use consistent naming
+      uploadBuffer = inputBuffer;
       contentType = file.type;
-      extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      filename = generateCompressedFilename(id, file.name.split(".").pop() || "jpg");
     }
-
-    // Generate unique filename with new extension
-    const filename = generateCompressedFilename(id, extension);
 
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(STORAGE_BUCKET)
-      .upload(filename, finalBuffer, {
+      .upload(filename, uploadBuffer, {
         contentType,
         upsert: false,
       });
@@ -173,9 +155,6 @@ export async function POST(
         jobId: id,
         url: urlData.publicUrl,
         filename: file.name,
-        storagePath: uploadData.path,
-        originalSizeBytes: originalSize,
-        compressedSizeBytes: finalBuffer.length,
       },
     });
 
@@ -199,3 +178,4 @@ export async function POST(
     );
   }
 }
+

@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCents, cn } from "@/lib/utils";
+import { compressImageForUpload } from "@/lib/client-image-compression";
 
 interface PendingPhoto {
   id: string;
@@ -249,8 +250,11 @@ export default function NewTicketPage() {
     setUploadingPhotos(true);
     try {
       for (const photo of pendingPhotos) {
+        // Compress image client-side before upload
+        const compressedFile = await compressImageForUpload(photo.file);
+        
         const formData = new FormData();
-        formData.append("file", photo.file);
+        formData.append("file", compressedFile);
 
         const res = await fetch(`/api/jobs/${jobId}/photos`, {
           method: "POST",

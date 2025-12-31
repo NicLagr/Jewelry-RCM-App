@@ -75,17 +75,12 @@ export async function PATCH(
 
     // Track status change for activity
     const statusChanged = data.status && data.status !== existingJob.status;
-    
-    // Set archivedAt timestamp when archiving
-    const isArchiving = data.status === "ARCHIVED" && existingJob.status !== "ARCHIVED";
-    const isUnarchiving = existingJob.status === "ARCHIVED" && data.status !== "ARCHIVED";
 
     const job = await prisma.job.update({
       where: { id },
       data: {
         ...data,
         promisedAt: data.promisedAt ? new Date(data.promisedAt) : undefined,
-        archivedAt: isArchiving ? new Date() : isUnarchiving ? null : undefined,
       },
       include: {
         customer: true,

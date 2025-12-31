@@ -2,113 +2,86 @@
 
 import imageCompression from "browser-image-compression";
 
-export interface ClientCompressionOptions {
-  maxSizeMB?: number;
-  maxWidthOrHeight?: number;
-  useWebWorker?: boolean;
-  initialQuality?: number;
-}
-
-// Vercel serverless functions have a 4.5MB body limit
-// We target well under that to account for base64 encoding overhead
-const DEFAULT_OPTIONS: ClientCompressionOptions = {
-  maxSizeMB: 2, // Target 2MB max to stay under Vercel's 4.5MB limit
-  maxWidthOrHeight: 1920, // Resize to final target size on client
+/**
+ * Client-side image compression options
+ * Pre-compresses images before upload to reduce bandwidth and upload time
+ */
+const CLIENT_COMPRESSION_OPTIONS = {
+  // Maximum file size in MB (will be further compressed server-side)
+  maxSizeMB: 1,
+  // Maximum dimension for longest side
+  maxWidthOrHeight: 2048,
+  // Use web worker for compression (doesn't block UI)
   useWebWorker: true,
-  initialQuality: 0.8,
+  // Preserve EXIF orientation data
+  preserveExif: true,
+  // File type (keep original or convert)
+  fileType: "image/jpeg" as const,
+  // Initial quality
+  initialQuality: 0.85,
 };
 
 /**
- * Client-side image compression for Vercel deployment
- * 
- * CRITICAL: Vercel serverless functions have a 4.5MB body size limit.
- * This compresses images on the client BEFORE upload to ensure they
- * fit within that limit.
- * 
- * For a 6MB phone photo:
- * - Client compresses to ~500KB-2MB
- * - Server does final optimization with Sharp to ~100-300KB
- * 
- * Benefits:
- * - Avoids 413 "Request Entity Too Large" errors
- * - Faster uploads (less data to transfer)
- * - Better user experience
+ * Compress an image file before upload
+ * This provides initial compression to reduce upload time
+ * Server will apply final optimization
+ *
+ * @param file - Original image file from input or camera
+ * @returns Compressed file ready for upload
  */
-export async function compressImageClient(
-  file: File,
-  options: ClientCompressionOptions = {}
-): Promise<File> {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
+export async function compressImageForUpload(file: File): Promise<File> {
+  // Skip compression for small files (under 500KB)
+  if (file.size < 500 * 1024) {
+    return file;
+  }
 
-  // Skip non-image files
+  // Skip compression for non-image files
   if (!file.type.startsWith("image/")) {
     return file;
   }
 
-  // Skip compression for already small files (under 500KB)
-  if (file.size < 500 * 1024) {
-    console.log(`[Client Compression] Skipping small file: ${formatFileSize(file.size)}`);
-    return file;
-  }
-
   try {
-    const originalSize = file.size;
-    console.log(`[Client Compression] Starting: ${formatFileSize(originalSize)}`);
-    
-    const compressedFile = await imageCompression(file, {
-      maxSizeMB: opts.maxSizeMB!,
-      maxWidthOrHeight: opts.maxWidthOrHeight!,
-      useWebWorker: opts.useWebWorker!,
-      initialQuality: opts.initialQuality,
-      fileType: "image/jpeg",
-    });
+    const compressedFile = await imageCompression(file, CLIENT_COMPRESSION_OPTIONS);
 
-    const ratio = originalSize / compressedFile.size;
-    console.log(
-      `[Client Compression] Complete: ${formatFileSize(originalSize)} → ${formatFileSize(compressedFile.size)} (${ratio.toFixed(1)}x reduction)`
-    );
-
-    // Verify we're under the limit
-    if (compressedFile.size > 4 * 1024 * 1024) {
-      console.warn("[Client Compression] Still too large, attempting more aggressive compression...");
-      // Try again with more aggressive settings
-      const moreCompressed = await imageCompression(compressedFile, {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1600,
-        useWebWorker: true,
-        initialQuality: 0.7,
-        fileType: "image/jpeg",
-      });
-      console.log(`[Client Compression] Second pass: ${formatFileSize(moreCompressed.size)}`);
-      return moreCompressed;
-    }
+    const originalSize = formatFileSize(file.size);
+    const newSize = formatFileSize(compressedFile.size);
+    const reduction = Math.round((1 - compressedFile.size / file.size) * 100);
+    console.log("Client compression: " + originalSize + " -> " + newSize + " (" + reduction + "% reduction)");
 
     return compressedFile;
   } catch (error) {
-    console.error("[Client Compression] Failed:", error);
-    // If compression fails and file is too large, we can't proceed
-    if (file.size > 4 * 1024 * 1024) {
-      throw new Error(`Image too large (${formatFileSize(file.size)}). Please use a smaller image or try again.`);
-    }
+    console.warn("Client-side compression failed, using original:", error);
     return file;
   }
 }
 
 /**
- * Compresses multiple files in parallel
+ * Compress multiple images in parallel
+ *
+ * @param files - Array of image files
+ * @returns Array of compressed files
  */
-export async function compressImagesClient(
-  files: File[],
-  options: ClientCompressionOptions = {}
-): Promise<File[]> {
-  return Promise.all(files.map((file) => compressImageClient(file, options)));
+export async function compressImagesForUpload(files: File[]): Promise<File[]> {
+  return Promise.all(files.map(compressImageForUpload));
 }
 
 /**
- * Formats file size for display
+ * Format file size to human readable string
  */
-export function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(2) + " MB";
 }
+
+/**
+ * Check if browser supports image compression
+ */
+export function isCompressionSupported(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof Worker !== "undefined" &&
+    typeof Blob !== "undefined"
+  );
+}
+

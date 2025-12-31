@@ -18,12 +18,12 @@ import {
   Pencil,
   Save,
 } from "lucide-react";
-import { compressImageClient, formatFileSize } from "@/lib/client-image-compression";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { compressImageForUpload } from "@/lib/client-image-compression";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   formatDateTime,
@@ -275,50 +275,28 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     if (!files || files.length === 0 || !job) return;
 
     setUploadingPhoto(true);
-    let hasError = false;
-    
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         // Validate file type
-        if (!file.type.startsWith("image/")) {
-          alert(`${file.name} is not an image file`);
-          continue;
-        }
-        // Validate file size (20MB max for original, will be compressed)
-        if (file.size > 20 * 1024 * 1024) {
-          alert(`${file.name} is too large (max 20MB)`);
-          continue;
-        }
+        if (!file.type.startsWith("image/")) continue;
+        // Validate file size (10MB max)
+        if (file.size > 10 * 1024 * 1024) continue;
 
-        try {
-          // Client-side compression - REQUIRED to stay under Vercel's 4.5MB limit
-          console.log(`[Upload] Original: ${formatFileSize(file.size)}`);
-          const compressedFile = await compressImageClient(file);
-          console.log(`[Upload] After compression: ${formatFileSize(compressedFile.size)}`);
+        // Compress image client-side before upload
+        const compressedFile = await compressImageForUpload(file);
 
-          const formData = new FormData();
-          formData.append("file", compressedFile);
+        const formData = new FormData();
+        formData.append("file", compressedFile);
 
-          const res = await fetch(`/api/jobs/${job.id}/photos`, {
-            method: "POST",
-            body: formData,
-          });
-
-          if (!res.ok) {
-            const errorData = await res.json().catch(() => ({ error: "Upload failed" }));
-            throw new Error(errorData.error || `Upload failed with status ${res.status}`);
-          }
-        } catch (uploadError) {
-          console.error(`Error uploading ${file.name}:`, uploadError);
-          hasError = true;
-          alert(`Failed to upload ${file.name}: ${uploadError instanceof Error ? uploadError.message : "Unknown error"}`);
-        }
+        await fetch(`/api/jobs/${job.id}/photos`, {
+          method: "POST",
+          body: formData,
+        });
       }
       fetchJob();
     } catch (error) {
-      console.error("Error uploading photos:", error);
-      hasError = true;
+      console.error("Error uploading photo:", error);
     } finally {
       setUploadingPhoto(false);
       if (fileInputRef.current) {
