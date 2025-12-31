@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,15 @@ export default function CustomersPage() {
   });
   const [deletingCustomerId, setDeletingCustomerId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [editForm, setEditForm] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    email: "",
+    vip: false,
+  });
+  const [saving, setSaving] = useState(false);
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -100,6 +110,44 @@ export default function CustomersPage() {
       }
     } catch (error) {
       console.error("Error creating customer:", error);
+    }
+  };
+
+  const handleEditCustomer = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setEditForm({
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      phone: customer.phone || "",
+      email: customer.email || "",
+      vip: customer.vip,
+    });
+  };
+
+  const handleSaveCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCustomer) return;
+
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/customers/${editingCustomer.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+
+      if (res.ok) {
+        setEditingCustomer(null);
+        fetchCustomers();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to update customer");
+      }
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      alert("An error occurred while updating");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -327,6 +375,14 @@ export default function CustomersPage() {
                             <Button
                               size="sm"
                               variant="ghost"
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600"
+                              onClick={() => handleEditCustomer(customer)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               className="h-8 w-8 p-0 text-slate-400 hover:text-red-600"
                               onClick={() => handleDeleteCustomer(customer.id, `${customer.firstName} ${customer.lastName}`)}
                               disabled={deletingCustomerId === customer.id}
@@ -477,6 +533,96 @@ export default function CustomersPage() {
                   </Button>
                   <Button type="submit" className="flex-1">
                     Create Customer
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit Customer Modal */}
+      {editingCustomer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Edit Customer</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSaveCustomer} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>First Name *</Label>
+                    <Input
+                      value={editForm.firstName}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, firstName: e.target.value })
+                      }
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label>Last Name *</Label>
+                    <Input
+                      value={editForm.lastName}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, lastName: e.target.value })
+                      }
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Phone</Label>
+                  <Input
+                    type="tel"
+                    value={editForm.phone}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, phone: e.target.value })
+                    }
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, email: e.target.value })
+                    }
+                    className="mt-1"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="edit-vip"
+                    checked={editForm.vip}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, vip: e.target.checked })
+                    }
+                    className="h-5 w-5 rounded border-slate-300"
+                  />
+                  <Label htmlFor="edit-vip" className="flex items-center gap-1">
+                    <Star className="h-4 w-4 text-amber-500" />
+                    VIP Customer
+                  </Label>
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setEditingCustomer(null)}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={saving}>
+                    {saving ? "Saving..." : "Save Changes"}
                   </Button>
                 </div>
               </form>

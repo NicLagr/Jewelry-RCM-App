@@ -66,6 +66,7 @@ export async function PATCH(
         lastName: data.lastName,
         phone: data.phone || null,
         email: data.email || null,
+        vip: data.vip ?? existingCustomer.vip,
       },
     });
 
