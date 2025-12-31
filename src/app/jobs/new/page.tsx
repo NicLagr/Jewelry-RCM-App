@@ -701,7 +701,10 @@ export default function NewTicketPage() {
         {/* Promised Date - Full Width */}
         <Card className="mt-6">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Promised Date</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg">Promised Date</CardTitle>
+              <span className="text-sm text-slate-400 font-normal">(optional)</span>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -716,7 +719,7 @@ export default function NewTicketPage() {
                 />
               </div>
               <div>
-                <Label className="text-slate-500 text-sm">Time (optional)</Label>
+                <Label className="text-slate-500 text-sm">Time</Label>
                 <Input
                   type="time"
                   value={promisedTime}
@@ -742,15 +745,23 @@ export default function NewTicketPage() {
               <Button type="button" variant="outline" size="sm" onClick={() => setQuickDate(7)}>
                 1 Week
               </Button>
+              {promisedDate && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => { setPromisedDate(""); setPromisedTime(""); }}
+                  className="text-slate-500"
+                >
+                  Clear
+                </Button>
+              )}
             </div>
 
-            {/* Warning */}
-            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-800">
-                This date will be shown to customer in SMS notifications
-              </p>
-            </div>
+            {/* Info message */}
+            <p className="text-sm text-slate-500">
+              Leave blank if no specific date is promised. If set, this date will be shown to the customer in SMS notifications.
+            </p>
           </CardContent>
         </Card>
 
