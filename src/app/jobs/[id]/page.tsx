@@ -15,8 +15,11 @@ import {
   Trash2,
   Loader2,
   Archive,
+  Pencil,
+  Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +41,7 @@ interface Job {
   itemStone: string | null;
   description: string | null;
   issue: string;
-  promisedAt: string;
+  promisedAt: string | null;
   depositCents: number;
   createdAt: string;
   customer: {
@@ -106,6 +109,14 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [smsError, setSmsError] = useState<string | null>(null);
   const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Edit mode states
+  const [editingCustomer, setEditingCustomer] = useState(false);
+  const [editingItem, setEditingItem] = useState(false);
+  const [editingIssue, setEditingIssue] = useState(false);
+  const [customerEdits, setCustomerEdits] = useState({ firstName: "", lastName: "", phone: "", email: "" });
+  const [itemEdits, setItemEdits] = useState({ itemType: "", itemMetal: "", itemStone: "", description: "" });
+  const [issueEdit, setIssueEdit] = useState("");
 
   const fetchJob = useCallback(async () => {
     try {
@@ -217,7 +228,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
   const getDefaultSmsMessage = () => {
     if (!job || !storeSettings) return "";
-    return `Hi ${job.customer.firstName}, your ${job.itemType} repair is ready for pickup at ${storeSettings.storeName}. Thank you!`;
+    return `Hi ${job.customer.firstName}, your item is ready for pickup at ${storeSettings.storeName}. Thank you!`;
   };
 
   const handleOpenSmsModal = () => {
@@ -280,6 +291,72 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     }
   };
 
+  // Edit handlers
+  const startEditingCustomer = () => {
+    if (!job) return;
+    setCustomerEdits({
+      firstName: job.customer.firstName,
+      lastName: job.customer.lastName,
+      phone: job.customer.phone || "",
+      email: job.customer.email || "",
+    });
+    setEditingCustomer(true);
+  };
+
+  const saveCustomerEdits = async () => {
+    if (!job) return;
+    setUpdating(true);
+    try {
+      const res = await fetch(`/api/customers/${job.customer.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(customerEdits),
+      });
+      if (res.ok) {
+        fetchJob();
+        setEditingCustomer(false);
+      }
+    } catch (error) {
+      console.error("Error updating customer:", error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const startEditingItem = () => {
+    if (!job) return;
+    setItemEdits({
+      itemType: job.itemType,
+      itemMetal: job.itemMetal || "",
+      itemStone: job.itemStone || "",
+      description: job.description || "",
+    });
+    setEditingItem(true);
+  };
+
+  const saveItemEdits = async () => {
+    if (!job) return;
+    await updateJob({
+      itemType: itemEdits.itemType,
+      itemMetal: itemEdits.itemMetal || null,
+      itemStone: itemEdits.itemStone || null,
+      description: itemEdits.description || null,
+    } as Partial<Job>);
+    setEditingItem(false);
+  };
+
+  const startEditingIssue = () => {
+    if (!job) return;
+    setIssueEdit(job.issue);
+    setEditingIssue(true);
+  };
+
+  const saveIssueEdit = async () => {
+    if (!job) return;
+    await updateJob({ issue: issueEdit } as Partial<Job>);
+    setEditingIssue(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
@@ -292,15 +369,18 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     return null;
   }
 
-  const overdue = isOverdue(job.promisedAt, job.status);
+  const overdue = job.promisedAt ? isOverdue(job.promisedAt, job.status) : false;
   const subtotal = job.services.reduce(
     (sum, s) => sum + s.qty * s.unitPriceCents,
     0
   );
 
-  // Format promised date as MM/DD
-  const promisedDate = new Date(job.promisedAt);
-  const formattedPromised = `${String(promisedDate.getMonth() + 1).padStart(2, '0')}/${String(promisedDate.getDate()).padStart(2, '0')}`;
+  // Format promised date as MM/DD (if exists)
+  let formattedPromised = "Not set";
+  if (job.promisedAt) {
+    const promisedDate = new Date(job.promisedAt);
+    formattedPromised = `${String(promisedDate.getMonth() + 1).padStart(2, '0')}/${String(promisedDate.getDate()).padStart(2, '0')}`;
+  }
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] pb-8">
@@ -378,52 +458,139 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 <div className="lg:col-span-2 space-y-6">
                   {/* Customer */}
                   <Card>
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-3 flex flex-row items-center justify-between">
                       <CardTitle className="text-base font-semibold">Customer</CardTitle>
+                      {!editingCustomer && (
+                        <Button variant="ghost" size="sm" onClick={startEditingCustomer}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                     </CardHeader>
                     <CardContent>
-            <div className="flex items-center gap-2">
-                        <span className="font-medium text-slate-900">
-                          {job.customer.firstName} {job.customer.lastName}
-                        </span>
-                        <span className="text-slate-500">•</span>
-                        {job.customer.phone && (
-                          <a href={`tel:${job.customer.phone}`} className="text-slate-600 hover:text-[#1a4d3e]">
-                            {job.customer.phone}
-                          </a>
-                        )}
-                      </div>
-                      <div className="text-sm text-slate-500 mt-1">
-                        Opt-in: SMS
-                      </div>
+                      {editingCustomer ? (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              placeholder="First Name"
+                              value={customerEdits.firstName}
+                              onChange={(e) => setCustomerEdits({ ...customerEdits, firstName: e.target.value })}
+                            />
+                            <Input
+                              placeholder="Last Name"
+                              value={customerEdits.lastName}
+                              onChange={(e) => setCustomerEdits({ ...customerEdits, lastName: e.target.value })}
+                            />
+                          </div>
+                          <Input
+                            placeholder="Phone"
+                            value={customerEdits.phone}
+                            onChange={(e) => setCustomerEdits({ ...customerEdits, phone: e.target.value })}
+                          />
+                          <Input
+                            placeholder="Email"
+                            value={customerEdits.email}
+                            onChange={(e) => setCustomerEdits({ ...customerEdits, email: e.target.value })}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={saveCustomerEdits} disabled={updating}>
+                              <Save className="h-4 w-4 mr-1" /> Save
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingCustomer(false)}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-slate-900">
+                              {job.customer.firstName} {job.customer.lastName}
+                            </span>
+                            <span className="text-slate-500">•</span>
+                            {job.customer.phone && (
+                              <a href={`tel:${job.customer.phone}`} className="text-slate-600 hover:text-[#1a4d3e]">
+                                {job.customer.phone}
+                              </a>
+                            )}
+                          </div>
+                          {job.customer.email && (
+                            <div className="text-sm text-slate-500 mt-1">
+                              {job.customer.email}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </CardContent>
                   </Card>
 
                   {/* Item */}
                   <Card>
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-3 flex flex-row items-center justify-between">
                       <CardTitle className="text-base font-semibold">Item</CardTitle>
+                      {!editingItem && (
+                        <Button variant="ghost" size="sm" onClick={startEditingItem}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center gap-2 text-slate-900">
-                        <span>{job.itemType}</span>
-                        {job.itemMetal && (
-                          <>
-                            <span className="text-slate-400">•</span>
-                            <span>{job.itemMetal}</span>
-                          </>
-                        )}
-                        {job.itemStone && (
-                          <>
-                            <span className="text-slate-400">•</span>
-                            <span>{job.itemStone}</span>
-                          </>
-                        )}
-                      </div>
-                      {job.description && (
-                        <p className="text-sm text-slate-500 mt-1">
-                          Desc: {job.description}
-                        </p>
+                      {editingItem ? (
+                        <div className="space-y-3">
+                          <Input
+                            placeholder="Item Type (e.g., Ring, Necklace)"
+                            value={itemEdits.itemType}
+                            onChange={(e) => setItemEdits({ ...itemEdits, itemType: e.target.value })}
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              placeholder="Metal (optional)"
+                              value={itemEdits.itemMetal}
+                              onChange={(e) => setItemEdits({ ...itemEdits, itemMetal: e.target.value })}
+                            />
+                            <Input
+                              placeholder="Stone (optional)"
+                              value={itemEdits.itemStone}
+                              onChange={(e) => setItemEdits({ ...itemEdits, itemStone: e.target.value })}
+                            />
+                          </div>
+                          <Textarea
+                            placeholder="Description"
+                            value={itemEdits.description}
+                            onChange={(e) => setItemEdits({ ...itemEdits, description: e.target.value })}
+                            rows={2}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={saveItemEdits} disabled={updating}>
+                              <Save className="h-4 w-4 mr-1" /> Save
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingItem(false)}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2 text-slate-900">
+                            <span>{job.itemType}</span>
+                            {job.itemMetal && (
+                              <>
+                                <span className="text-slate-400">•</span>
+                                <span>{job.itemMetal}</span>
+                              </>
+                            )}
+                            {job.itemStone && (
+                              <>
+                                <span className="text-slate-400">•</span>
+                                <span>{job.itemStone}</span>
+                              </>
+                            )}
+                          </div>
+                          {job.description && (
+                            <p className="text-sm text-slate-500 mt-1">
+                              Desc: {job.description}
+                            </p>
+                          )}
+                        </>
                       )}
                     </CardContent>
                   </Card>
@@ -461,11 +628,34 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
                   {/* Issue */}
                   <Card>
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-3 flex flex-row items-center justify-between">
                       <CardTitle className="text-base font-semibold">Issue</CardTitle>
+                      {!editingIssue && (
+                        <Button variant="ghost" size="sm" onClick={startEditingIssue}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                     </CardHeader>
                     <CardContent>
-                      <p className="text-slate-900">{job.issue}</p>
+                      {editingIssue ? (
+                        <div className="space-y-3">
+                          <Textarea
+                            value={issueEdit}
+                            onChange={(e) => setIssueEdit(e.target.value)}
+                            rows={3}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={saveIssueEdit} disabled={updating}>
+                              <Save className="h-4 w-4 mr-1" /> Save
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingIssue(false)}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-slate-900">{job.issue}</p>
+                      )}
                     </CardContent>
                   </Card>
                 </div>

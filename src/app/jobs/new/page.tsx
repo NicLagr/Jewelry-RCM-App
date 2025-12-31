@@ -132,6 +132,7 @@ export default function NewTicketPage() {
   const [serviceLines, setServiceLines] = useState<ServiceLine[]>([]);
   const [promisedDate, setPromisedDate] = useState("");
   const [promisedTime, setPromisedTime] = useState("");
+  const [customJobNumber, setCustomJobNumber] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -281,13 +282,18 @@ export default function NewTicketPage() {
     setLoading(true);
 
     try {
-      const promisedAt = promisedTime
-        ? `${promisedDate}T${promisedTime}:00`
-        : `${promisedDate}T17:00:00`;
+      // Handle optional promised date
+      let promisedAt = null;
+      if (promisedDate) {
+        promisedAt = promisedTime
+          ? `${promisedDate}T${promisedTime}:00`
+          : `${promisedDate}T17:00:00`;
+      }
 
       const payload = {
         customerId: selectedCustomer?.id,
         newCustomer: isNewCustomer ? newCustomer : null,
+        customJobNumber: customJobNumber ? parseInt(customJobNumber) : null,
         itemType: "Ring", // Default for now
         description: itemInfo.description,
         issue: itemInfo.description,
@@ -327,9 +333,9 @@ export default function NewTicketPage() {
     }
   };
 
+  // Promised date is now optional
   const isValid =
-    (selectedCustomer || (isNewCustomer && newCustomer.firstName && newCustomer.lastName)) &&
-    promisedDate;
+    (selectedCustomer || (isNewCustomer && newCustomer.firstName && newCustomer.lastName));
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] pb-8">
@@ -348,6 +354,29 @@ export default function NewTicketPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Job Number Input */}
+        <Card className="mb-6">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Job Number</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="flex-1 max-w-xs">
+                <Input
+                  type="number"
+                  placeholder="Enter job/envelope number"
+                  value={customJobNumber}
+                  onChange={(e) => setCustomJobNumber(e.target.value)}
+                  className="text-lg font-mono"
+                />
+              </div>
+              <p className="text-sm text-slate-500">
+                Enter the number from your job envelope. Leave blank to auto-generate.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Customer Info & Services */}

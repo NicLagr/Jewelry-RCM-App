@@ -89,6 +89,7 @@ export async function POST(request: Request) {
     const {
       customerId,
       newCustomer,
+      customJobNumber,
       itemType,
       itemMetal,
       itemStone,
@@ -122,14 +123,28 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate unique job number
-    let jobNumber = generateJobNumber();
-    let attempts = 0;
-    while (attempts < 10) {
-      const existing = await prisma.job.findUnique({ where: { jobNumber } });
-      if (!existing) break;
+    // Use custom job number if provided, otherwise generate one
+    let jobNumber: number;
+    if (customJobNumber) {
+      // Check if custom job number already exists
+      const existing = await prisma.job.findUnique({ where: { jobNumber: customJobNumber } });
+      if (existing) {
+        return NextResponse.json(
+          { error: `Job number ${customJobNumber} already exists` },
+          { status: 400 }
+        );
+      }
+      jobNumber = customJobNumber;
+    } else {
+      // Generate unique job number
       jobNumber = generateJobNumber();
-      attempts++;
+      let attempts = 0;
+      while (attempts < 10) {
+        const existing = await prisma.job.findUnique({ where: { jobNumber } });
+        if (!existing) break;
+        jobNumber = generateJobNumber();
+        attempts++;
+      }
     }
 
     const job = await prisma.job.create({
@@ -141,7 +156,7 @@ export async function POST(request: Request) {
         itemStone,
         description,
         issue,
-        promisedAt: new Date(promisedAt),
+        promisedAt: promisedAt ? new Date(promisedAt) : null,
         assigneeId: assigneeId || null,
         depositCents: depositCents || 0,
         services: {

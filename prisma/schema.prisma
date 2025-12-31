@@ -47,7 +47,7 @@ model Job {
   itemStone    String? // Diamond, Ruby, etc.
   description  String?
   issue        String
-  promisedAt   DateTime
+  promisedAt   DateTime?
   assigneeId   String?
   assignee     User?            @relation("AssignedJobs", fields: [assigneeId], references: [id])
   depositCents Int              @default(0)

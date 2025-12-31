@@ -356,8 +356,13 @@ export default function StoreSettingsPage() {
                 ) : (
                   <>
                     <span className="flex-1 text-slate-900">{service.name}</span>
-                    <span className="font-medium text-slate-900">
-                      ${(service.defaultUnitPriceCents / 100).toFixed(2)}
+                    <span className={cn(
+                      "font-medium",
+                      service.defaultUnitPriceCents === 0 ? "text-slate-400 italic" : "text-slate-900"
+                    )}>
+                      {service.defaultUnitPriceCents === 0 
+                        ? "No default price" 
+                        : `$${(service.defaultUnitPriceCents / 100).toFixed(2)}`}
                     </span>
                     <Button
                       variant="ghost"
@@ -374,39 +379,44 @@ export default function StoreSettingsPage() {
 
             {/* Add New Service Form */}
             {showAddService ? (
-              <div className="flex items-center gap-3 py-2 border-t border-slate-200 mt-4 pt-4">
-                <Input
-                  value={newService.name}
-                  onChange={(e) => setNewService({ ...newService, name: e.target.value })}
-                  className="flex-1"
-                  placeholder="Service name"
-                />
-                <div className="relative w-24">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+              <div className="flex flex-col gap-3 py-2 border-t border-slate-200 mt-4 pt-4">
+                <div className="flex items-center gap-3">
                   <Input
-                    value={newService.price}
-                    onChange={(e) => setNewService({ ...newService, price: e.target.value.replace(/[^0-9.]/g, "") })}
-                    className="pl-5 text-right"
-                    placeholder="0.00"
+                    value={newService.name}
+                    onChange={(e) => setNewService({ ...newService, name: e.target.value })}
+                    className="flex-1"
+                    placeholder="Service name"
                   />
+                  <div className="relative w-28">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                    <Input
+                      value={newService.price}
+                      onChange={(e) => setNewService({ ...newService, price: e.target.value.replace(/[^0-9.]/g, "") })}
+                      className="pl-5 text-right"
+                      placeholder="optional"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleAddService}
+                    disabled={!newService.name}
+                  >
+                    Add
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowAddService(false);
+                      setNewService({ name: "", price: "" });
+                    }}
+                  >
+                    Cancel
+                  </Button>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={handleAddService}
-                  disabled={!newService.name}
-                >
-                  Add
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowAddService(false);
-                    setNewService({ name: "", price: "" });
-                  }}
-                >
-                  Cancel
-                </Button>
+                <p className="text-xs text-slate-500">
+                  Leave price blank if it varies per job
+                </p>
               </div>
             ) : (
               <Button
