@@ -79,7 +79,7 @@ export async function aggressivelyCompressImage(
   let result = await compressToFormat(inputBuffer, newWidth, newHeight, "webp", AGGRESSIVE_COMPRESSION_CONFIG.webpQuality);
 
   // If still too large, progressively reduce quality
-  let quality = AGGRESSIVE_COMPRESSION_CONFIG.webpQuality;
+  let quality: number = AGGRESSIVE_COMPRESSION_CONFIG.webpQuality;
   while (result.length > AGGRESSIVE_COMPRESSION_CONFIG.maxFileSizeBytes && 
          quality > AGGRESSIVE_COMPRESSION_CONFIG.minQuality) {
     quality -= 3;
