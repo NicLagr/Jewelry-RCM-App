@@ -117,12 +117,14 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [editingIssue, setEditingIssue] = useState(false);
   const [editingJobNumber, setEditingJobNumber] = useState(false);
   const [editingPromisedDate, setEditingPromisedDate] = useState(false);
+  const [editingServices, setEditingServices] = useState(false);
   const [customerEdits, setCustomerEdits] = useState({ firstName: "", lastName: "", phone: "", email: "" });
   const [itemEdits, setItemEdits] = useState({ itemType: "", itemMetal: "", itemStone: "", description: "" });
   const [issueEdit, setIssueEdit] = useState("");
   const [jobNumberEdit, setJobNumberEdit] = useState("");
   const [promisedDateEdit, setPromisedDateEdit] = useState("");
   const [promisedTimeEdit, setPromisedTimeEdit] = useState("");
+  const [servicesEdits, setServicesEdits] = useState<{ id: string; name: string; qty: number; unitPriceCents: number; isNew?: boolean; toDelete?: boolean }[]>([]);
 
   const fetchJob = useCallback(async () => {
     try {
@@ -443,6 +445,72 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     setEditingPromisedDate(false);
   };
 
+  const startEditingServices = () => {
+    if (!job) return;
+    setServicesEdits(
+      job.services.map((s) => ({
+        id: s.id,
+        name: s.name,
+        qty: s.qty,
+        unitPriceCents: s.unitPriceCents,
+      }))
+    );
+    setEditingServices(true);
+  };
+
+  const addNewService = () => {
+    setServicesEdits([
+      ...servicesEdits,
+      {
+        id: `new-${Date.now()}`,
+        name: "",
+        qty: 1,
+        unitPriceCents: 0,
+        isNew: true,
+      },
+    ]);
+  };
+
+  const updateServiceEdit = (index: number, field: string, value: string | number) => {
+    const updated = [...servicesEdits];
+    updated[index] = { ...updated[index], [field]: value };
+    setServicesEdits(updated);
+  };
+
+  const markServiceForDeletion = (index: number) => {
+    const updated = [...servicesEdits];
+    if (updated[index].isNew) {
+      // Just remove new services that haven't been saved
+      updated.splice(index, 1);
+    } else {
+      // Mark existing services for deletion
+      updated[index] = { ...updated[index], toDelete: true };
+    }
+    setServicesEdits(updated);
+  };
+
+  const saveServicesEdits = async () => {
+    if (!job) return;
+    setUpdating(true);
+    try {
+      const res = await fetch(`/api/jobs/${job.id}/services`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          services: servicesEdits.filter((s) => !s.toDelete),
+        }),
+      });
+      if (res.ok) {
+        fetchJob();
+        setEditingServices(false);
+      }
+    } catch (error) {
+      console.error("Error updating services:", error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
@@ -672,32 +740,96 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
                   {/* Services */}
                   <Card>
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-3 flex flex-row items-center justify-between">
                       <CardTitle className="text-base font-semibold">Services</CardTitle>
+                      {!editingServices && (
+                        <Button variant="ghost" size="sm" onClick={startEditingServices}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                     </CardHeader>
                     <CardContent>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-slate-200">
-                              <th className="text-left py-2 font-medium text-slate-500">Service</th>
-                              <th className="text-center py-2 font-medium text-slate-500">Qty</th>
-                              <th className="text-right py-2 font-medium text-slate-500">Unit</th>
-                              <th className="text-right py-2 font-medium text-slate-500">Total</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {job.services.map((service) => (
-                              <tr key={service.id} className="border-b border-slate-100">
-                                <td className="py-2">{service.name}</td>
-                                <td className="py-2 text-center">{`{${service.qty}}`}</td>
-                                <td className="py-2 text-right">${(service.unitPriceCents / 100).toFixed(0)}</td>
-                                <td className="py-2 text-right">${((service.qty * service.unitPriceCents) / 100).toFixed(0)}</td>
+                      {editingServices ? (
+                        <div className="space-y-3">
+                          {servicesEdits.filter((s) => !s.toDelete).map((service, index) => (
+                            <div key={service.id} className="flex items-center gap-2">
+                              <Input
+                                placeholder="Service name"
+                                value={service.name}
+                                onChange={(e) => updateServiceEdit(index, "name", e.target.value)}
+                                className="flex-1"
+                              />
+                              <Input
+                                type="number"
+                                placeholder="Qty"
+                                value={service.qty}
+                                onChange={(e) => updateServiceEdit(index, "qty", parseInt(e.target.value) || 1)}
+                                className="w-16 text-center"
+                                min={1}
+                              />
+                              <div className="relative w-24">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                                <Input
+                                  type="number"
+                                  placeholder="Price"
+                                  value={(service.unitPriceCents / 100).toFixed(0)}
+                                  onChange={(e) => updateServiceEdit(index, "unitPriceCents", Math.round(parseFloat(e.target.value) * 100) || 0)}
+                                  className="pl-6 text-right"
+                                />
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-500 hover:text-red-600 hover:bg-red-50 p-2"
+                                onClick={() => markServiceForDeletion(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button variant="outline" size="sm" onClick={addNewService} className="w-full">
+                            + Add Service
+                          </Button>
+                          <div className="flex gap-2 pt-2">
+                            <Button size="sm" onClick={saveServicesEdits} disabled={updating}>
+                              <Save className="h-4 w-4 mr-1" /> Save
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingServices(false)}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-slate-200">
+                                <th className="text-left py-2 font-medium text-slate-500">Service</th>
+                                <th className="text-center py-2 font-medium text-slate-500">Qty</th>
+                                <th className="text-right py-2 font-medium text-slate-500">Unit</th>
+                                <th className="text-right py-2 font-medium text-slate-500">Total</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                            </thead>
+                            <tbody>
+                              {job.services.map((service) => (
+                                <tr key={service.id} className="border-b border-slate-100">
+                                  <td className="py-2">{service.name}</td>
+                                  <td className="py-2 text-center">{service.qty}</td>
+                                  <td className="py-2 text-right">${(service.unitPriceCents / 100).toFixed(0)}</td>
+                                  <td className="py-2 text-right">${((service.qty * service.unitPriceCents) / 100).toFixed(0)}</td>
+                                </tr>
+                              ))}
+                              {job.services.length === 0 && (
+                                <tr>
+                                  <td colSpan={4} className="py-4 text-center text-slate-500">
+                                    No services added
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
 
