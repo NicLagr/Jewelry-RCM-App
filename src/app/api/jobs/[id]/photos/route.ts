@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
-import { supabase, STORAGE_BUCKET, generatePhotoFilename } from "@/lib/supabase";
+import { supabase, STORAGE_BUCKET } from "@/lib/supabase";
+import {
+  compressImage,
+  isProcessableImage,
+  formatFileSize,
+} from "@/lib/image-compression";
 
 // GET /api/jobs/[id]/photos - List photos for a job
 export async function GET(
@@ -40,7 +45,16 @@ export async function GET(
   }
 }
 
-// POST /api/jobs/[id]/photos - Upload a photo
+/**
+ * Generates a unique filename for uploaded photos
+ * Now uses .webp extension for compressed images
+ */
+function generateCompressedFilename(jobId: string, extension: string): string {
+  const timestamp = Date.now();
+  return `${jobId}/${timestamp}.${extension}`;
+}
+
+// POST /api/jobs/[id]/photos - Upload a photo with compression
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -78,7 +92,7 @@ export async function POST(
       );
     }
 
-    // Validate file size (max 10MB)
+    // Validate file size (max 10MB for original upload)
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
@@ -87,18 +101,56 @@ export async function POST(
       );
     }
 
-    // Generate unique filename
-    const filename = generatePhotoFilename(id, file.name);
-
-    // Convert file to buffer for upload
+    // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const originalBuffer = Buffer.from(arrayBuffer);
+    const originalSize = originalBuffer.length;
+
+    let finalBuffer: Buffer;
+    let contentType: string;
+    let extension: string;
+    let compressionInfo = "";
+
+    // Compress the image if it's a processable format
+    if (isProcessableImage(file.type)) {
+      try {
+        const result = await compressImage(originalBuffer, {
+          maxWidth: 1920,
+          maxHeight: 1920,
+          quality: 80,
+          format: "webp",
+        });
+
+        finalBuffer = result.buffer;
+        contentType = result.contentType;
+        extension = result.extension;
+        compressionInfo = ` (compressed from ${formatFileSize(result.originalSize)} to ${formatFileSize(result.compressedSize)}, ${result.compressionRatio.toFixed(1)}x reduction)`;
+
+        console.log(
+          `[Photo Upload] Job #${job.jobNumber}: ${formatFileSize(originalSize)} → ${formatFileSize(result.compressedSize)} (${result.compressionRatio.toFixed(1)}x)`
+        );
+      } catch (compressionError) {
+        // If compression fails, fall back to original
+        console.warn("Image compression failed, using original:", compressionError);
+        finalBuffer = originalBuffer;
+        contentType = file.type;
+        extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      }
+    } else {
+      // Non-processable format, use original
+      finalBuffer = originalBuffer;
+      contentType = file.type;
+      extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    }
+
+    // Generate unique filename with new extension
+    const filename = generateCompressedFilename(id, extension);
 
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(STORAGE_BUCKET)
-      .upload(filename, buffer, {
-        contentType: file.type,
+      .upload(filename, finalBuffer, {
+        contentType,
         upsert: false,
       });
 
@@ -121,6 +173,9 @@ export async function POST(
         jobId: id,
         url: urlData.publicUrl,
         filename: file.name,
+        storagePath: uploadData.path,
+        originalSizeBytes: originalSize,
+        compressedSizeBytes: finalBuffer.length,
       },
     });
 
@@ -129,7 +184,7 @@ export async function POST(
       data: {
         jobId: id,
         type: "NOTE",
-        message: `Photo uploaded: ${file.name}`,
+        message: `Photo uploaded: ${file.name}${compressionInfo}`,
         userId: user.id,
       },
     });
@@ -144,4 +199,3 @@ export async function POST(
     );
   }
 }
-

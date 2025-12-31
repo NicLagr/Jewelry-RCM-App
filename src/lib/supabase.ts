@@ -44,3 +44,87 @@ export function getPhotoUrl(path: string): string {
   return data.publicUrl;
 }
 
+/**
+ * Extracts the storage path from a full Supabase public URL
+ * Example: https://xxx.supabase.co/storage/v1/object/public/job-photos/abc123/1234567890.webp
+ * Returns: abc123/1234567890.webp
+ */
+export function extractStoragePath(publicUrl: string): string | null {
+  try {
+    const url = new URL(publicUrl);
+    const pathParts = url.pathname.split(`/object/public/${STORAGE_BUCKET}/`);
+    if (pathParts.length === 2) {
+      return pathParts[1];
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Deletes a file from Supabase storage
+ */
+export async function deleteStorageFile(path: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await getSupabaseClient().storage
+      .from(STORAGE_BUCKET)
+      .remove([path]);
+    
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+
+/**
+ * Downloads a file from Supabase storage
+ */
+export async function downloadStorageFile(path: string): Promise<{ data: ArrayBuffer | null; error?: string }> {
+  try {
+    const { data, error } = await getSupabaseClient().storage
+      .from(STORAGE_BUCKET)
+      .download(path);
+    
+    if (error) {
+      return { data: null, error: error.message };
+    }
+    
+    if (!data) {
+      return { data: null, error: "No data returned" };
+    }
+    
+    return { data: await data.arrayBuffer() };
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+
+/**
+ * Uploads a file to Supabase storage, replacing if exists
+ */
+export async function uploadStorageFile(
+  path: string,
+  buffer: Buffer,
+  contentType: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await getSupabaseClient().storage
+      .from(STORAGE_BUCKET)
+      .upload(path, buffer, {
+        contentType,
+        upsert: true,
+      });
+    
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+

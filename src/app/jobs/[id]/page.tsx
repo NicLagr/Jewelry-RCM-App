@@ -18,6 +18,7 @@ import {
   Pencil,
   Save,
 } from "lucide-react";
+import { compressImageClient, formatFileSize } from "@/lib/client-image-compression";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -282,8 +283,16 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         // Validate file size (10MB max)
         if (file.size > 10 * 1024 * 1024) continue;
 
+        // Client-side compression for faster uploads
+        console.log(`[Upload] Original: ${formatFileSize(file.size)}`);
+        const compressedFile = await compressImageClient(file, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 2048,
+        });
+        console.log(`[Upload] After client compression: ${formatFileSize(compressedFile.size)}`);
+
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", compressedFile);
 
         await fetch(`/api/jobs/${job.id}/photos`, {
           method: "POST",
