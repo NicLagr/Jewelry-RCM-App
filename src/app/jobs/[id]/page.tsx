@@ -179,6 +179,10 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     }
   };
 
+  const handleStartWork = async () => {
+    await updateJob({ status: "IN_PROGRESS" });
+  };
+
   const handleMarkReady = async () => {
     await updateJob({ status: "READY" });
   };
@@ -714,7 +718,17 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 <MessageSquare className="h-5 w-5 mr-2" />
                 Send Text
               </Button>
-              {job.status !== "READY" && job.status !== "PICKED_UP" && (
+              {job.status === "INTAKE" && (
+                <Button
+                  className="w-full"
+                  onClick={handleStartWork}
+                  disabled={updating}
+                >
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  Start Work
+                </Button>
+              )}
+              {job.status === "IN_PROGRESS" && (
                 <Button
                         className="w-full"
                   onClick={handleMarkReady}
