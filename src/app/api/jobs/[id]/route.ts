@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { supabase, STORAGE_BUCKET } from "@/lib/supabase";
 
 export async function GET(
   request: Request,
@@ -169,6 +170,42 @@ export async function DELETE(
 
     const { id } = await params;
 
+    // Get all photos for this job to delete from storage
+    const media = await prisma.jobMedia.findMany({
+      where: { jobId: id },
+    });
+
+    // Delete photos from Supabase Storage
+    if (media.length > 0) {
+      const storagePaths: string[] = [];
+      
+      for (const item of media) {
+        try {
+          const url = new URL(item.url);
+          const match = url.pathname.match(/\/object\/public\/job-photos\/(.+)$/);
+          if (match && match[1]) {
+            storagePaths.push(match[1]);
+          }
+        } catch (e) {
+          console.error("Error parsing media URL:", item.url, e);
+        }
+      }
+
+      if (storagePaths.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .remove(storagePaths);
+
+        if (storageError) {
+          console.error("Error deleting photos from storage:", storageError);
+          // Continue with database deletion even if storage delete fails
+        } else {
+          console.log(`Deleted ${storagePaths.length} photos from storage for job ${id}`);
+        }
+      }
+    }
+
+    // Delete the job (cascades to media, activities, services)
     await prisma.job.delete({
       where: { id },
     });
