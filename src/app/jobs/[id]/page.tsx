@@ -116,10 +116,13 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [editingItem, setEditingItem] = useState(false);
   const [editingIssue, setEditingIssue] = useState(false);
   const [editingJobNumber, setEditingJobNumber] = useState(false);
+  const [editingPromisedDate, setEditingPromisedDate] = useState(false);
   const [customerEdits, setCustomerEdits] = useState({ firstName: "", lastName: "", phone: "", email: "" });
   const [itemEdits, setItemEdits] = useState({ itemType: "", itemMetal: "", itemStone: "", description: "" });
   const [issueEdit, setIssueEdit] = useState("");
   const [jobNumberEdit, setJobNumberEdit] = useState("");
+  const [promisedDateEdit, setPromisedDateEdit] = useState("");
+  const [promisedTimeEdit, setPromisedTimeEdit] = useState("");
 
   const fetchJob = useCallback(async () => {
     try {
@@ -409,6 +412,37 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     setEditingJobNumber(false);
   };
 
+  const startEditingPromisedDate = () => {
+    if (!job) return;
+    if (job.promisedAt) {
+      const date = new Date(job.promisedAt);
+      setPromisedDateEdit(date.toISOString().split("T")[0]);
+      setPromisedTimeEdit(date.toTimeString().slice(0, 5));
+    } else {
+      setPromisedDateEdit("");
+      setPromisedTimeEdit("");
+    }
+    setEditingPromisedDate(true);
+  };
+
+  const savePromisedDateEdit = async () => {
+    if (!job) return;
+    let promisedAt = null;
+    if (promisedDateEdit) {
+      promisedAt = promisedTimeEdit
+        ? `${promisedDateEdit}T${promisedTimeEdit}:00`
+        : `${promisedDateEdit}T17:00:00`;
+    }
+    await updateJob({ promisedAt } as Partial<Job>);
+    setEditingPromisedDate(false);
+  };
+
+  const clearPromisedDate = async () => {
+    if (!job) return;
+    await updateJob({ promisedAt: null } as Partial<Job>);
+    setEditingPromisedDate(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
@@ -484,58 +518,16 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Top Row - Tabs and Controls */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-          {/* Tabs */}
-          <Tabs defaultValue="overview" className="w-full">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <TabsList className="bg-slate-100">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="activity">Activity</TabsTrigger>
-                <TabsTrigger value="media">Media</TabsTrigger>
-                <TabsTrigger value="billing">Billing</TabsTrigger>
-              </TabsList>
+        {/* Tabs */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="bg-slate-100">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="media">Media</TabsTrigger>
+            <TabsTrigger value="billing">Billing</TabsTrigger>
+          </TabsList>
 
-              {/* Right side controls */}
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-500">Promised date</span>
-                  <span className="font-medium">{formattedPromised}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-500">Assignee</span>
-                  <Select
-                    value={job.assignee?.id || ""}
-                    onChange={(e) =>
-                      updateJob({ assigneeId: e.target.value || null } as Partial<Job>)
-                    }
-                    disabled={updating}
-                    className="w-36"
-                  >
-                    <option value="">Unassigned</option>
-                    {users.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <Select
-                  value={job.status}
-                  onChange={(e) => updateJob({ status: e.target.value })}
-                  disabled={updating}
-                  className="w-36"
-                >
-                  {STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {getStatusLabel(status)}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-
-            <TabsContent value="overview" className="mt-6">
+          <TabsContent value="overview" className="mt-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column - Customer, Item, Services */}
                 <div className="lg:col-span-2 space-y-6">
@@ -743,8 +735,99 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   </Card>
                 </div>
 
-                {/* Right Column - Totals and Actions */}
+                {/* Right Column - Job Details, Totals and Actions */}
                 <div className="space-y-6">
+                  {/* Job Details */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base font-semibold">Job Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Status */}
+                      <div>
+                        <label className="text-sm text-slate-500 block mb-1">Status</label>
+                        <Select
+                          value={job.status}
+                          onChange={(e) => updateJob({ status: e.target.value })}
+                          disabled={updating}
+                          className="w-full"
+                        >
+                          {STATUSES.map((status) => (
+                            <option key={status} value={status}>
+                              {getStatusLabel(status)}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+
+                      {/* Assignee */}
+                      <div>
+                        <label className="text-sm text-slate-500 block mb-1">Assignee</label>
+                        <Select
+                          value={job.assignee?.id || ""}
+                          onChange={(e) =>
+                            updateJob({ assigneeId: e.target.value || null } as Partial<Job>)
+                          }
+                          disabled={updating}
+                          className="w-full"
+                        >
+                          <option value="">Unassigned</option>
+                          {users.map((user) => (
+                            <option key={user.id} value={user.id}>
+                              {user.name}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+
+                      {/* Promised Date */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-sm text-slate-500">Promised Date</label>
+                          {!editingPromisedDate && (
+                            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={startEditingPromisedDate}>
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                        {editingPromisedDate ? (
+                          <div className="space-y-2">
+                            <Input
+                              type="date"
+                              value={promisedDateEdit}
+                              onChange={(e) => setPromisedDateEdit(e.target.value)}
+                              min={new Date().toISOString().split("T")[0]}
+                            />
+                            <Input
+                              type="time"
+                              value={promisedTimeEdit}
+                              onChange={(e) => setPromisedTimeEdit(e.target.value)}
+                            />
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={savePromisedDateEdit} disabled={updating}>
+                                Save
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => setEditingPromisedDate(false)}>
+                                Cancel
+                              </Button>
+                              {job.promisedAt && (
+                                <Button size="sm" variant="ghost" className="text-red-600" onClick={clearPromisedDate}>
+                                  Clear
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="font-medium text-slate-900">
+                            {job.promisedAt 
+                              ? formatDateTime(job.promisedAt)
+                              : "Not set"}
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   {/* Totals */}
                   <Card>
                     <CardContent className="pt-6">
