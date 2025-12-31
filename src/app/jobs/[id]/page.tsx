@@ -1206,10 +1206,25 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                     <div className="space-y-4">
                       <div className="flex justify-between py-2 border-b border-slate-100">
                         <span className="text-slate-600">Subtotal</span>
-                        <span className="font-medium">{formatCents(subtotal)}</span>
+                        <span className="font-medium w-28 text-right">{formatCents(subtotal)}</span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                        <span className="text-slate-600">Deposit Paid</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-600">Deposit Paid</span>
+                          {!editingDeposit && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 opacity-50 hover:opacity-100"
+                              onClick={() => {
+                                setDepositEdit((job.depositCents / 100).toFixed(2));
+                                setEditingDeposit(true);
+                              }}
+                            >
+                              <Pencil className="h-3 w-3 text-slate-400" />
+                            </Button>
+                          )}
+                        </div>
                         {editingDeposit ? (
                           <div className="flex items-center gap-2">
                             <div className="relative w-28">
@@ -1238,28 +1253,15 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                             </Button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 group">
-                            <span className="font-medium text-green-600">
-                              -{formatCents(job.depositCents)}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => {
-                                setDepositEdit((job.depositCents / 100).toFixed(2));
-                                setEditingDeposit(true);
-                              }}
-                            >
-                              <Pencil className="h-3 w-3 text-slate-400" />
-                            </Button>
-                          </div>
+                          <span className="font-medium text-green-600 w-28 text-right">
+                            -{formatCents(job.depositCents)}
+                          </span>
                         )}
                       </div>
                       <div className="flex justify-between py-3 text-lg">
                         <span className="font-semibold">Balance Due</span>
                         <span className={cn(
-                          "font-bold",
+                          "font-bold w-28 text-right",
                           subtotal - job.depositCents <= 0 ? "text-green-600" : ""
                         )}>
                           {formatCents(subtotal - job.depositCents)}

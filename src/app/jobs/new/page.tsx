@@ -134,6 +134,7 @@ export default function NewTicketPage() {
   const [promisedDate, setPromisedDate] = useState("");
   const [promisedTime, setPromisedTime] = useState("");
   const [customJobNumber, setCustomJobNumber] = useState("");
+  const [depositCents, setDepositCents] = useState(0);
 
   useEffect(() => {
     fetchData();
@@ -303,7 +304,7 @@ export default function NewTicketPage() {
         issue: itemInfo.description,
         promisedAt,
         assigneeId: null,
-        depositCents: 0,
+        depositCents: depositCents,
         services: serviceLines.map((line) => ({
           serviceCatalogId: line.serviceCatalogId,
           name: line.name,
@@ -608,11 +609,26 @@ export default function NewTicketPage() {
                 </Button>
 
                 {serviceLines.length > 0 && (
-                  <div className="flex justify-end pt-4 border-t border-slate-200">
-                    <div className="text-right">
+                  <div className="pt-4 border-t border-slate-200 space-y-3">
+                    <div className="flex justify-between items-center">
                       <span className="text-slate-500">Subtotal:</span>
-                      <span className="ml-3 text-xl font-bold text-slate-900">
+                      <span className="text-lg font-semibold text-slate-900">
                         {formatCents(subtotal)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Deposit:</span>
+                      <div className="w-32">
+                        <PriceInput
+                          value={depositCents}
+                          onChange={(cents) => setDepositCents(cents)}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                      <span className="font-medium text-slate-700">Balance Due:</span>
+                      <span className="text-xl font-bold text-slate-900">
+                        {formatCents(subtotal - depositCents)}
                       </span>
                     </div>
                   </div>
