@@ -39,6 +39,19 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if customer has opted in to SMS
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: { customer: true },
+    });
+
+    if (job && job.customer && job.customer.smsOptIn === false) {
+      return NextResponse.json(
+        { error: "Customer has opted out of SMS notifications" },
+        { status: 400 }
+      );
+    }
+
     // Get store settings to check if SMS is enabled
     const settings = await prisma.storeSettings.findUnique({
       where: { id: "default" },

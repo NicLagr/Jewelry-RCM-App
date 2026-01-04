@@ -31,6 +31,7 @@ interface Customer {
   phone: string | null;
   email: string | null;
   vip: boolean;
+  smsOptIn: boolean;
   lastVisitAt: string;
   totalJobs: number;
   activeJobs: number;
@@ -62,6 +63,7 @@ export default function CustomersPage() {
     phone: "",
     email: "",
     vip: false,
+    smsOptIn: true,
   });
   const [saving, setSaving] = useState(false);
 
@@ -121,6 +123,7 @@ export default function CustomersPage() {
       phone: customer.phone || "",
       email: customer.email || "",
       vip: customer.vip,
+      smsOptIn: customer.smsOptIn,
     });
   };
 
@@ -611,6 +614,22 @@ export default function CustomersPage() {
                     VIP Customer
                   </Label>
                 </div>
+                {editForm.phone && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="edit-sms"
+                      checked={editForm.smsOptIn}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, smsOptIn: e.target.checked })
+                      }
+                      className="h-5 w-5 rounded border-slate-300"
+                    />
+                    <Label htmlFor="edit-sms">
+                      SMS notifications enabled
+                    </Label>
+                  </div>
+                )}
                 <div className="flex gap-3 pt-4">
                   <Button
                     type="button"

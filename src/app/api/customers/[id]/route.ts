@@ -67,6 +67,7 @@ export async function PATCH(
         phone: data.phone || null,
         email: data.email || null,
         vip: data.vip ?? existingCustomer.vip,
+        smsOptIn: data.smsOptIn ?? existingCustomer.smsOptIn,
       },
     });
 

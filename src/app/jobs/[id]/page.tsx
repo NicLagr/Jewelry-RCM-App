@@ -51,6 +51,7 @@ interface Job {
     lastName: string;
     phone: string | null;
     email: string | null;
+    smsOptIn: boolean;
   };
   assignee: {
     id: string;
@@ -118,7 +119,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [editingJobNumber, setEditingJobNumber] = useState(false);
   const [editingPromisedDate, setEditingPromisedDate] = useState(false);
   const [editingServices, setEditingServices] = useState(false);
-  const [customerEdits, setCustomerEdits] = useState({ firstName: "", lastName: "", phone: "", email: "" });
+  const [customerEdits, setCustomerEdits] = useState({ firstName: "", lastName: "", phone: "", email: "", smsOptIn: true });
   const [itemEdits, setItemEdits] = useState({ itemType: "", itemMetal: "", itemStone: "", description: "" });
   const [issueEdit, setIssueEdit] = useState("");
   const [jobNumberEdit, setJobNumberEdit] = useState("");
@@ -341,6 +342,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       lastName: job.customer.lastName,
       phone: job.customer.phone || "",
       email: job.customer.email || "",
+      smsOptIn: job.customer.smsOptIn,
     });
     setEditingCustomer(true);
   };
@@ -636,6 +638,19 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                             value={customerEdits.email}
                             onChange={(e) => setCustomerEdits({ ...customerEdits, email: e.target.value })}
                           />
+                          {customerEdits.phone && (
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={customerEdits.smsOptIn}
+                                onChange={(e) => setCustomerEdits({ ...customerEdits, smsOptIn: e.target.checked })}
+                                className="w-4 h-4 rounded border-slate-300 text-[#1a4d3e] focus:ring-[#1a4d3e]"
+                              />
+                              <span className="text-sm text-slate-600">
+                                SMS notifications enabled
+                              </span>
+                            </label>
+                          )}
                           <div className="flex gap-2">
                             <Button size="sm" onClick={saveCustomerEdits} disabled={updating}>
                               <Save className="h-4 w-4 mr-1" /> Save
@@ -984,10 +999,11 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 variant="outline"
                       className="w-full"
                 onClick={handleOpenSmsModal}
-                disabled={!job.customer.phone}
+                disabled={!job.customer.phone || !job.customer.smsOptIn}
+                title={!job.customer.smsOptIn ? "Customer has opted out of SMS" : undefined}
               >
                 <MessageSquare className="h-5 w-5 mr-2" />
-                Send Text
+                {job.customer.smsOptIn ? "Send Text" : "SMS Opted Out"}
               </Button>
               {job.status === "INTAKE" && (
                 <Button

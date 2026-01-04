@@ -124,6 +124,7 @@ export default function NewTicketPage() {
     lastName: "",
     phone: "",
     email: "",
+    smsOptIn: true,
   });
 
   const [itemInfo, setItemInfo] = useState({
@@ -428,6 +429,7 @@ export default function NewTicketPage() {
                                   lastName: customer.lastName,
                                   phone: customer.phone || "",
                                   email: customer.email || "",
+                                  smsOptIn: true,
                                 });
                           }}
                           className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0"
@@ -456,7 +458,7 @@ export default function NewTicketPage() {
                         onClick={() => {
                           setSelectedCustomer(null);
                           setIsNewCustomer(false);
-                          setNewCustomer({ firstName: "", lastName: "", phone: "", email: "" });
+                          setNewCustomer({ firstName: "", lastName: "", phone: "", email: "", smsOptIn: true });
                         }}
                   >
                         Change Customer
@@ -502,6 +504,20 @@ export default function NewTicketPage() {
                       className="mt-1"
                     />
                   </div>
+                  {/* SMS Opt-in - only show for new customers with phone */}
+                  {isNewCustomer && newCustomer.phone && (
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newCustomer.smsOptIn}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, smsOptIn: e.target.checked })}
+                        className="w-4 h-4 rounded border-slate-300 text-[#1a4d3e] focus:ring-[#1a4d3e]"
+                      />
+                      <span className="text-sm text-slate-600">
+                        Customer consents to SMS notifications
+                      </span>
+                    </label>
+                  )}
                 </div>
                 )}
 
