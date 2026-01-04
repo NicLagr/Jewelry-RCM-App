@@ -13,6 +13,14 @@ export async function middleware(request: NextRequest) {
   const publicRoutes = ["/login", "/api/auth/login", "/api/cron"];
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
+  // Compliance/legal pages - always publicly accessible (for Twilio verification, etc.)
+  const complianceRoutes = ["/sms-consent", "/privacy", "/terms"];
+  const isComplianceRoute = complianceRoutes.some((route) => pathname === route);
+  
+  if (isComplianceRoute) {
+    return NextResponse.next();
+  }
+
   // API routes that need auth check
   const isApiRoute = pathname.startsWith("/api");
 
