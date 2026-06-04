@@ -93,6 +93,8 @@ interface StoreSettings {
   smsEnabled: boolean;
 }
 
+type SmsTemplate = "pickup" | "received";
+
 const STATUSES = ["INTAKE", "IN_PROGRESS", "READY", "PICKED_UP", "ARCHIVED"];
 
 export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -266,16 +268,21 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     }
   };
 
-  const getDefaultSmsMessage = () => {
+  const getSmsMessage = (template: SmsTemplate = "pickup") => {
     if (!job || !storeSettings) return "";
-    return `Hi ${job.customer.firstName}, your item is ready for pickup at ${storeSettings.storeName}. Please call us with any questions. This is an automated message - please do not reply to this number.`;
+    const statusText =
+      template === "received"
+        ? "has been received by"
+        : "is ready for pickup at";
+
+    return `Hi ${job.customer.firstName}, your item, job number ${job.jobNumber}, ${statusText} ${storeSettings.storeName}. Please call us with any questions. This is an automated message - please do not reply to this number.`;
   };
 
   const handleOpenSmsModal = () => {
     setSmsError(null);
     // Pre-fill with default message if empty
     if (!smsMessage) {
-      setSmsMessage(getDefaultSmsMessage());
+      setSmsMessage(getSmsMessage("pickup"));
     }
     setShowSmsModal(true);
   };
@@ -1309,6 +1316,29 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 <p className="font-medium">
                   {job.customer.firstName} {job.customer.lastName} ({job.customer.phone})
                 </p>
+              </div>
+              <div>
+                <span className="text-sm text-slate-500">Templates</span>
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSmsMessage(getSmsMessage("pickup"))}
+                    disabled={sendingSms}
+                  >
+                    Pickup Message
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSmsMessage(getSmsMessage("received"))}
+                    disabled={sendingSms}
+                  >
+                    Received Message
+                  </Button>
+                </div>
               </div>
               <div>
                 <Textarea
